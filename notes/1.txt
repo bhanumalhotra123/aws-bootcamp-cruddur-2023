@@ -164,3 +164,22 @@ Can setup alerts (email)
 
 generate passwords
 https://passwordsgenerator.net/
+
+
+
+AWS CLI auto-prompt
+
+[cloudshell-user@ip-10-140-98-140 ~]$ aws --cli-auto-prompt
+> aws sts get-caller-identity
+{
+    "UserId": "AIDA2YOXE7Z6BWWISXNG3",
+    "Account": "739722460796",
+    "Arn": "arn:aws:iam::739722460796:user/bhanu"
+}
+[cloudshell-user@ip-10-140-98-140 ~]$ 
+
+
+
+
+AWS CLI Reference
+https://docs.aws.amazon.com/cli/latest/
