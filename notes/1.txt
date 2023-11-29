@@ -183,3 +183,11 @@ AWS CLI auto-prompt
 
 AWS CLI Reference
 https://docs.aws.amazon.com/cli/latest/
+
+
+Understanding diff directories
+https://docs.freebsd.org/en/books/handbook/basics/#dirstructure
+
+/usr/bin have installations that comes with os
+
+/usr/local/bin have installations that you install
