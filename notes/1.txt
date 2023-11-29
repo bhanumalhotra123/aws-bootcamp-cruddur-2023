@@ -3,6 +3,7 @@ Cheap / Fast / Good ------- Pick two
 
 
 Well-Architected Framework’s six pillars
+https://aws.amazon.com/well-architected-tool/
 
 1. Operational Excellence
 The Operational Excellence pillar includes the ability to support development and run workloads effectively, gain insight into their operation, and continuously improve supporting processes and procedures to delivery business value. You can find prescriptive guidance on implementation in the Operational Excellence Pillar whitepaper.
@@ -125,7 +126,7 @@ In your development and deployment process, identify opportunities to reduce you
 
 
 
-
+https://c4model.com/
 The C4 Model:
 
 The C4 model is introduced as a way to describe and communicate software architecture effectively. It's designed to create maps of code at different levels of detail, similar to zooming in and out on Google Maps.
@@ -141,3 +142,14 @@ Person: Represents users of the software system.
 Software System: The highest level of abstraction, describing something delivering value.
 Container: Represents applications or data stores.
 Component: Represents a grouping of related functionality.
+
+
+
+AWS Service endpoints and quotas
+https://docs.aws.amazon.com/general/latest/gr/aws-service-information.html
+
+
+
+
+Ludichart
+https://lucid.app/lucidchart/a718841a-2e2d-4052-9a2a-5f8c633ce9b4/edit?beaconFlowId=9591EE4C1C8D62EA&invitationId=inv_938c540f-61fe-4201-b081-ded42fbd8433&page=0_0#
