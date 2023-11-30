@@ -10,7 +10,7 @@ We are are going to set AWS CLI to use partial autoprompt mode to make it easier
 The bash commands we are using are the same as the [AWS CLI Install Instructions]https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 
 Update our .gitpod.yml to include the following task.
-
+'''
 tasks:
   - name: aws-cli
     env:
@@ -21,7 +21,7 @@ tasks:
       unzip awscliv2.zip
       sudo ./aws/install
       cd $THEIA_WORKSPACE_ROOT
-
+'''
 
 We'll also run these commands indivually to perform the install manually
 
