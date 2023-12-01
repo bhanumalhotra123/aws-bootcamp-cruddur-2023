@@ -14,3 +14,7 @@ Recreated Logical Architecture Design in Ludichart.
 
 
 Also understood how to setup budget and alarms by following the cli commands given in journal/week0.md
+
+
+
+How to resolve the issue of pushing the sensitive info to remote bymistake?
