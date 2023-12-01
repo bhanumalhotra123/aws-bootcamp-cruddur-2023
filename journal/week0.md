@@ -131,7 +131,7 @@ We'll create a subscription supply the TopicARN and our Email
 aws sns subscribe \
     --topic-arn TopicARN \
     --protocol email \
-    --notification-endpoint ***REMOVED***
+    --notification-endpoint bhanucorrect@gmail.com
 ```
 Check your email and confirm the subscription
 
