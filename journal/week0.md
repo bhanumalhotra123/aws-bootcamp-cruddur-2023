@@ -7,7 +7,8 @@ We'll be using the AWS CLI often in this bootcamp, so we'll proceed to installin
 Install AWS CLI
 We are going to install the AWS CLI when our Gitpod enviroment lanuches.
 We are are going to set AWS CLI to use partial autoprompt mode to make it easier to debug CLI commands.
-The bash commands we are using are the same as the [AWS CLI Install Instructions]https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+The bash commands we are using are the same as the [AWS CLI Install Instructions]
+https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 
 Update our .gitpod.yml to include the following task.
 ```
@@ -24,16 +25,19 @@ tasks:
 ```
 
 We'll also run these commands indivually to perform the install manually
-
+  
+  
+  
+  
 Create a new User and Generate AWS Credentials
 
-Go to (IAM Users Console](https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/users) bhanu create a new user
-Enable console access for the user
-Create a new Admin Group and apply AdministratorAccess
-Create the user and go find and click into the user
-Click on Security Credentials and Create Access Key
-Choose AWS CLI Access
-Download the CSV with the credentials
+*Go to (IAM Users Console](https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/users) bhanu create a new user
+*Enable console access for the user
+*Create a new Admin Group and apply AdministratorAccess
+*Create the user and go find and click into the user
+*Click on Security Credentials and Create Access Key
+*Choose AWS CLI Access
+*Download the CSV with the credentials
 
 Set Env Vars
 
@@ -65,14 +69,47 @@ You should see something like this:
     "Arn": "arn:aws:iam::655602346534:user/bhanucloudcamp"
 }
 ```
+    
+      
+
+  
+
+
+
+Create an AWS Budget
+aws budgets create-budget
+
+Get your AWS Account ID
+
+aws sts get-caller-identity --query Account --output text
+
+gp env AWS_ACCOUNT_ID=""
+
+Supply your AWS Account ID
+Update the json files
+This is another case with AWS CLI its just much easier to json files due to lots of nested json
+
+gp env AWS_ACCOUNT_ID=""
+```
+aws budgets create-budget \
+    --account-id $AccountID \
+    --budget file://aws/json/budget.json \
+    --notifications-with-subscribers file://aws/json/budget-notifications-with-subscribers.json
+```
+
+Donot run it more than once as it will create another budget and notification for it
+Also these actions have costs attached to them.
+  
+
+  
 Enable Billing
 We need to turn on Billing Alerts to recieve alerts...
-
-In your Root Account go to the Billing Page
-Under Billing Preferences Choose Receive Billing Alerts
-Save Preferences
-Creating a Billing Alarm
-Create SNS Topic
+  
+*In your Root Account go to the Billing Page
+*Under Billing Preferences Choose Receive Billing Alerts
+*Save Preferences
+*Creating a Billing Alarm
+*Create SNS Topic
 
 
 
@@ -113,28 +150,3 @@ aws cloudwatch put-metric-alarm --cli-input-json file://aws/json/alarm-config.js
 
 
 
-
-
-Create an AWS Budget
-aws budgets create-budget
-
-Get your AWS Account ID
-
-aws sts get-caller-identity --query Account --output text
-
-gp env AWS_ACCOUNT_ID=""
-
-Supply your AWS Account ID
-Update the json files
-This is another case with AWS CLI its just much easier to json files due to lots of nested json
-
-gp env AWS_ACCOUNT_ID=""
-```
-aws budgets create-budget \
-    --account-id $AccountID \
-    --budget file://aws/json/budget.json \
-    --notifications-with-subscribers file://aws/json/budget-notifications-with-subscribers.json
-```
-
-Donot run it more than once as it will create another budget and notification for it
-Also these actions have costs attached to them.
