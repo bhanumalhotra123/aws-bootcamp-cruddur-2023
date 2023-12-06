@@ -4,7 +4,6 @@ from flask_cors import CORS, cross_origin
 import os
 
 from services.home_activities import *
-from services.notification_activities import *
 from services.user_activities import *
 from services.create_activity import *
 from services.create_reply import *
@@ -14,30 +13,32 @@ from services.messages import *
 from services.create_message import *
 from services.show_activity import *
 
-# HoneyComb ------
+# HoneyComb ---------
 from opentelemetry import trace
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor 
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
-# HoneyComb -------
+
+# HoneyComb ---------
 # Initialize tracing and an exporter that can send data to Honeycomb
 provider = TracerProvider()
 processor = BatchSpanProcessor(OTLPSpanExporter())
 provider.add_span_processor(processor)
 
+# Show this in the logs within the backend-flask app (STDOUT)
 simple_processor = SimpleSpanProcessor(ConsoleSpanExporter())
 provider.add_span_processor(simple_processor)
+
 trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
 
-
 app = Flask(__name__)
 
-
-# HoneyComb -------
+# HoneyComb ---------
+# Initialize automatic instrumentation with Flask
 FlaskInstrumentor().instrument_app(app)
 RequestsInstrumentor().instrument()
 
@@ -87,13 +88,6 @@ def data_create_message():
   else:
     return model['data'], 200
   return
-
-@app.route("/api/activities/notifications", methods=['GET'])
-def data_notifications():
-  print("1: CORS")
-  data = NotificationsActivities.run()
-  print("4: CORS")
-  return data, 200
 
 @app.route("/api/activities/home", methods=['GET'])
 def data_home():
