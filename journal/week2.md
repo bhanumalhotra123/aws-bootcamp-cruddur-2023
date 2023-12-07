@@ -57,6 +57,7 @@ Add `aws/json/xray.json`
 
 ```sh
 FLASK_ADDRESS="https://4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
+
 aws xray create-group \
    --group-name "Cruddur" \
    --filter-expression "service(\"$FLASK_ADDRESS\") {fault OR error}"
@@ -66,10 +67,16 @@ aws xray create-group \
 aws xray create-sampling-rule --cli-input-json file://aws/json/xray.json
 ```
 
+
+![6](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/9acb36df-794f-4e40-8abb-3b6caa94e1a2)
+
+
  [Install X-ray Daemon](https://docs.aws.amazon.com/xray/latest/devguide/xray-daemon.html)
 
 [Github aws-xray-daemon](https://github.com/aws/aws-xray-daemon)
 [X-Ray Docker Compose example](https://github.com/marjamis/xray/blob/master/docker-compose.yml)
+
+
 
 
 ```sh
