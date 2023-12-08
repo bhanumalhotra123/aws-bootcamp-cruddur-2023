@@ -9,6 +9,9 @@ services:
       OTEL_EXPORTER_OTLP_HEADERS: "x-honeycomb-team=${HONEYCOMB_API_KEY}"
       AWS_XRAY_URL: "*4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}*"
       AWS_XRAY_DAEMON_ADDRESS: "xray-daemon:2000"
+      AWS_DEFAULT_REGION: "us-east-1"
+      AWS_ACCESS_KEY_ID: AKIATR2J4T3ENN7GDE42
+      AWS_SECRET_ACCESS_KEY: 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
     build: ./backend-flask
     ports:
       - "4567:4567"
@@ -26,8 +29,8 @@ services:
   xray-daemon:
     image: "amazon/aws-xray-daemon"
     environment:
-      AWS_ACCESS_KEY_ID: AKIAVYVPVEQ73BVT6JOE
-      AWS_SECRET_ACCESS_KEY: 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
+      AWS_ACCESS_KEY_ID: AKIATR2J4T3ENN7GDE42
+      AWS_SECRET_ACCESS_KEY: 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
       AWS_REGION: "us-east-1"
     command:
       - "xray -o -b xray-daemon:2000"
