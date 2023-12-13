@@ -93,17 +93,21 @@ cors = CORS(
 
 # Rollbar ----------
 rollbar_access_token = os.getenv('ROLLBAR_ACCESS_TOKEN')
+
 def init_rollbar():
-    """init rollbar module"""
+    """Initialize Rollbar module"""
     rollbar.init(
-        # access token
-        access_token=rollbar_access_token,  # Corrected line
-        # environment name
+        # Access token
+        access_token=rollbar_access_token,
+        # Environment name
         environment='production',
-        # server root directory, makes tracebacks prettier
+        # Server root directory, makes tracebacks prettier
         root=os.path.dirname(os.path.realpath(__file__)),
-        # flask already sets up logging
-        allow_logging_basic_config=False)
+        # Flask already sets up logging
+        allow_logging_basic_config=False
+    )
+       
+       
 
     # send exceptions from `app` to rollbar, using flask's signal system.
     got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
@@ -112,7 +116,6 @@ def init_rollbar():
 def rollbar_test():
     rollbar.report_message('Hello World!', 'warning')
     return "Hello World!"
-
 
 @app.route("/api/message_groups", methods=['GET'])
 def data_message_groups():
