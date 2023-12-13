@@ -16,8 +16,9 @@
 				
 			],
 			"settings": {
-				"workbench.colorTheme": "Default Dark+ Experimental"
+				"workbench.colorTheme": "Monokai Dark+"
 			}
+			
 			
 		}
 	}
