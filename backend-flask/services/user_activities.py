@@ -10,8 +10,6 @@ class UserActivities:
 
     now = datetime.now(timezone.utc).astimezone()
 
-
-
     if user_handle == None or len(user_handle) < 1:
       model['errors'] = ['blank_user_handle']
     else:
@@ -24,6 +22,7 @@ class UserActivities:
         'expires_at': (now + timedelta(days=31)).isoformat()
       }]
       model['data'] = results
+      
     dict = {
       "now": now.isoformat(),
       "results-size": len(model['data'])
