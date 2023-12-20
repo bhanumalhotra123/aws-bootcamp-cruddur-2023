@@ -1,3 +1,18 @@
+![1a](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/d1ce2b14-1bae-4842-95de-0e6aa66e027b)
+![1b](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/ff3b9678-1450-432d-a24c-72d4cba3fadd)
+![1c](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/36d85541-e538-447d-822f-40e22ecdfda3)
+![1d](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/685fa221-291f-4839-977a-996575b48045)
+![1e](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/6efa9253-d54e-4cec-9e2b-ecd999967c80)
+![1f](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/43ba4414-063e-4fc5-9756-07a1ffb422ca)
+![scp](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/bbc89f35-58a1-41ad-80b0-ac089c651a32)
+![1h](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/63c2e675-892f-4570-b169-786323b94011)
+
+  
+
+
+
+
+
 Was able to setup gitpod and added the configuration to download aws-cli whenever gitpod is launched.
 
 ![1](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/a6553859-1406-4f99-b94e-b5e2eba86a73)
