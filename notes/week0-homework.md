@@ -39,4 +39,34 @@ Using trufflehog and bfg
 
 The primary purpose of BFG Repo-Cleaner is to remove specific files or content from the Git history, not from the working directory or the latest commit. When you use BFG Repo-Cleaner with options like --delete-files or --replace-text, it modifies the Git history by removing or replacing the specified content in the commits.
 
+If you get to know your creds were being exposed, firstly go to aws and deactivate and delete them.
+
+  
+brew install trufflesecurity/trufflehog/trufflehog
+
+
+  
+brew install bfg
+
+  
+We can test using test-repo
+   
+trufflehog git https://github.com/trufflesecurity/test_keys --only-verified
+  
+then you test your own repo
+  
+trufflehog git https://github.com/bhanumalhotra123/repo_name --only-verified
+  
+Now once you have found the security issues, to replace those values we use tool called bfg
+
+  
+https://rtyley.github.io/bfg-repo-cleaner/
+  
+Remember to keep the requirements file out of the project repo so that it is not pushed to remote by mistake as it contains the sensitive data.
+
+$ bfg --replace-text ../passwords.txt  my-repo.git
+
+
 If you want to remove specific strings from the actual content of files in the working directory or the latest commit, you need to manually modify the files, commit the changes, and push the new commit to the remote repository.
+
+
