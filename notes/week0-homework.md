@@ -21,9 +21,7 @@ Was able to setup gitpod and added the configuration to download aws-cli wheneve
 
   
 
-Implemented cloudwatch logs
 
-![1i](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/fc1b9122-8c5b-4c67-a5bc-45480fc696bb)
 
 
 
@@ -77,3 +75,8 @@ $ bfg --replace-text ../passwords.txt  my-repo.git
 If you want to remove specific strings from the actual content of files in the working directory or the latest commit, you need to manually modify the files, commit the changes, and push the new commit to the remote repository.
 
 
+
+
+  Implemented cloudwatch logs
+
+![1i](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/fc1b9122-8c5b-4c67-a5bc-45480fc696bb)
