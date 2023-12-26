@@ -2,6 +2,7 @@ from flask import Flask
 from flask import request
 from flask_cors import CORS, cross_origin
 import os
+import boto3
 
 from services.home_activities import *
 from services.user_activities import *
@@ -38,13 +39,13 @@ import rollbar.contrib.flask
 from flask import got_request_exception
 
 # Configuring Logger to Use CloudWatch
-# LOGGER = logging.getLogger(__name__)
-# LOGGER.setLevel(logging.DEBUG)
-# console_handler = logging.StreamHandler()
-# cw_handler = watchtower.CloudWatchLogHandler(log_group='cruddur')
-# LOGGER.addHandler(console_handler)
-# LOGGER.addHandler(cw_handler)
-# LOGGER.info("test log")
+#LOGGER = logging.getLogger(__name__)
+#LOGGER.setLevel(logging.DEBUG)
+#boto3.setup_default_session(region_name='us-east-1')
+##cw_handler = watchtower.CloudWatchLogHandler(log_group='cruddur')
+#LOGGER.addHandler(console_handler)
+#LOGGER.addHandler(cw_handler)
+#LOGGER.info("test log")
 
 # HoneyComb ---------
 # Initialize tracing and an exporter that can send data to Honeycomb
@@ -60,6 +61,7 @@ xray_recorder.configure(service='backend-flask', dynamic_naming=xray_url)
 # Show this in the logs within the backend-flask app (STDOUT)
 #simple_processor = SimpleSpanProcessor(ConsoleSpanExporter())
 #provider.add_span_processor(simple_processor)
+
 
 trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
@@ -155,7 +157,7 @@ def data_create_message():
 
 @app.route("/api/activities/home", methods=['GET'])
 def data_home():
-  data = HomeActivities.run()
+  data = HomeActivities.run(Logger= LOGGER)
   return data, 200
 
 @app.route("/api/activities/@<string:handle>", methods=['GET'])
