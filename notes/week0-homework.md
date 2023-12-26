@@ -19,6 +19,13 @@ Was able to setup gitpod and added the configuration to download aws-cli wheneve
 
 
 
+  
+
+Implemented cloudwatch logs
+
+![1i](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/fc1b9122-8c5b-4c67-a5bc-45480fc696bb)
+
+
 
 Recreated Logical Architecture Design in Ludichart.
 
