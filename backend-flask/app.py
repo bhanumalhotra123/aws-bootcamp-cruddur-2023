@@ -95,13 +95,11 @@ cors = CORS(
 #    return response
 
 # Rollbar ----------
-rollbar_access_token = os.getenv('ROLLBAR_ACCESS_TOKEN')
-
 def init_rollbar():
     """Initialize Rollbar module"""
     rollbar.init(
         # Access token
-        access_token=rollbar_access_token,
+        access_token='c7145591af864a7e9eca48341bd35bd3',
         # Environment name
         environment='production',
         # Server root directory, makes tracebacks prettier
@@ -157,7 +155,7 @@ def data_create_message():
 
 @app.route("/api/activities/home", methods=['GET'])
 def data_home():
-  data = HomeActivities.run(Logger= LOGGER)
+  data = HomeActivities.run()  # Logger= LOGGER
   return data, 200
 
 @app.route("/api/activities/@<string:handle>", methods=['GET'])
@@ -209,4 +207,5 @@ def data_activities_reply(activity_uuid):
   return
 
 if __name__ == "__main__":
+  init_rollbar()
   app.run(debug=True)
