@@ -71,6 +71,8 @@ Remember to keep the requirements file out of the project repo so that it is not
 
 $ bfg --replace-text ../passwords.txt  my-repo.git
 
+ ![3](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/1ab982df-30ec-4a9a-b7f5-066063798fcc)
+
 
 If you want to remove specific strings from the actual content of files in the working directory or the latest commit, you need to manually modify the files, commit the changes, and push the new commit to the remote repository.
 
