@@ -50,7 +50,7 @@ from flask import got_request_exception
 # HoneyComb ---------
 # Initialize tracing and an exporter that can send data to Honeycomb
 provider = TracerProvider()
-processor = BatchSpanProcessor(OTLPSpanExporter())
+processor = BatchSpanProcessor(OTLPSpanExporter()) 
 provider.add_span_processor(processor)
 
 # X-RAY ----------
