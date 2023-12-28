@@ -10,8 +10,9 @@ services:
       OTEL_SERVICE_NAME: 'backend-flask'
       OTEL_EXPORTER_OTLP_ENDPOINT: "https://api.honeycomb.io"
       OTEL_EXPORTER_OTLP_HEADERS: "x-honeycomb-team=${HONEYCOMB_API_KEY}"
-      AWS_XRAY_URL: "xray-daemon:2000"  # Update to match X-Ray daemon service name and port
+     
       AWS_XRAY_DAEMON_ADDRESS: "xray-daemon:2000"
+      AWS_XRAY_URL: "*4567-${CODESPACE_NAME}.${CODESPACE_HOST}*"
       AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
       AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
       AWS_REGION: "${AWS_DEFAULT_REGION}"
