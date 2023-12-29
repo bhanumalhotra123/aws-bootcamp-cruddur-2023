@@ -71,6 +71,8 @@ Remember to keep the requirements file out of the project repo so that it is not
 
 $ bfg --replace-text ../passwords.txt  my-repo.git
 
+ ![3](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/1ab982df-30ec-4a9a-b7f5-066063798fcc)
+
 
 If you want to remove specific strings from the actual content of files in the working directory or the latest commit, you need to manually modify the files, commit the changes, and push the new commit to the remote repository.
 
@@ -80,3 +82,16 @@ If you want to remove specific strings from the actual content of files in the w
   Implemented cloudwatch logs
 
 ![1i](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/fc1b9122-8c5b-4c67-a5bc-45480fc696bb)
+
+
+Implemented x-ray and x-ray subsegment
+  
+![1j](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/e69994a0-e76c-44ef-a7f5-8b54529ed1ce)
+  
+![1k](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/af7a808e-81c1-43dd-9d72-9b6c881e9385)
+  
+![1l](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/66d9949d-2d7e-48bf-88bd-17fc6eca2679)
+  
+![1m](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/9114a4ff-a69b-4df0-8132-4b1de1ac3256)
+
+![1o](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/acd96495-5fc5-4293-92e3-1046e2d04360)
