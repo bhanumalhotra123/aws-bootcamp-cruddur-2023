@@ -9,7 +9,7 @@ import ActivityFeed from '../components/ActivityFeed';
 import ActivityForm from '../components/ActivityForm';
 import ReplyForm from '../components/ReplyForm';
 
-
+  
 
 export default function HomeFeedPage() {
   const [activities, setActivities] = React.useState([]);
