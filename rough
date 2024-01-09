@@ -1,0 +1,3 @@
+aws ec2 modify-security-group-rules \
+    --group-id $DB_SG_ID \
+    --security-group-rules SecurityGroupRuleId=$DB_SG_RULE_ID,SecurityGroupRule='{IpProtocol=tcp,ToPort=5432,FromPort=5432,CidrIpv4=$GITPOD_IP/32}'
