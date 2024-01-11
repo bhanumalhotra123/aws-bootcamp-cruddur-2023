@@ -4,9 +4,7 @@ import psycopg2
 def lambda_handler(event, context):
     user = event['request']['userAttributes']
     try:
-        conn = psycopg2.connect(os.getenv('CONNECTION_URL')
-        )
-        cur = conn.cursor()
+
         print('user Attributes')
 
         user_display_name = user['name']
@@ -28,6 +26,8 @@ def lambda_handler(event, context):
             {user_cognito_id}
            )"
         """
+        conn = psycopg2.connect(os.getenv('CONNECTION_URL'))
+        cur = conn.cursor()
         cur.execute(sql)
         conn.commit() 
 
