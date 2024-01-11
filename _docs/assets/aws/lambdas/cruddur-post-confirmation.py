@@ -1,30 +1,33 @@
 import json
 import psycopg2
+import os
 
 def lambda_handler(event, context):
     user = event['request']['userAttributes']
+    print('userAttributes')
+    print(user)
+    
+    user_display_name = user['name']
+    user_email        = user['email'] 
+    user_handle       = user['preferred_username']
+    user_cognito_id   = user['sub']
+    
+    conn = None  
+    
     try:
-
-        print('user Attributes')
-
-        user_display_name = user['name']
-        user_email        = user['email'] 
-        user_handle       = user['prefered_username']
-        user_cognito_id   = user['sub']
-
         sql = f"""
-         "INSERT INTO users (
-            display_name, 
-            handle,
-            email, 
-            cognito_user_id
+            INSERT INTO users (
+                display_name, 
+                handle,
+                email, 
+                cognito_user_id
             ) 
-         VALUES(
-            {user_display_name},
-            {user_handle},
-            {user_email},
-            {user_cognito_id}
-           )"
+            VALUES(
+                '{user_display_name}',
+                '{user_handle}',
+                '{user_email}',
+                '{user_cognito_id}'
+            )
         """
         conn = psycopg2.connect(os.getenv('CONNECTION_URL'))
         cur = conn.cursor()
