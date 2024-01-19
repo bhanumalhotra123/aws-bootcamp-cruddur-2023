@@ -53,14 +53,14 @@ class Db:
       print(key, ":", value)
 
   # Method to print SQL statements
-  def print_sql(self, title, sql):
+  def print_sql(self, title, sql, params={}):
     # Set color codes for terminal output
     cyan = '\033[96m'
     no_color = '\033[0m'
     # Print a header indicating the type of SQL statement
     print(f'{cyan} SQL STATEMENT-[{title}]------{no_color}')
     # Print the SQL statement
-    print(sql)
+    print(sql, params)
 
   # Method to execute a SQL statement with commit and returning functionality
   def query_commit(self, sql, params={}):
@@ -93,7 +93,7 @@ class Db:
   # Method to execute a SQL statement and return a single JSON object
   def query_array_json(self, sql, params={}):
     # Print the SQL statement with a header indicating the type
-    self.print_sql('array', sql)
+    self.print_sql('array', sql, params)
 
     # Wrap the SQL statement to return an array of JSON objects
     wrapped_sql = self.query_wrap_array(sql)
@@ -111,7 +111,7 @@ class Db:
   # Method to execute a SQL statement and return a single JSON object
   def query_object_json(self, sql, params={}):
     # Print the SQL statement with a header indicating the type
-    self.print_sql('json', sql)
+    self.print_sql('json', sql, params)
     # Print the SQL parameters
     self.print_params(params)
 
@@ -132,6 +132,14 @@ class Db:
         else:
           # Return the fetched JSON object
           return json[0]
+
+  def query_value(self,sql,params={}):
+    self.print_sql('value',sql,params)
+    with self.pool.connection() as conn:
+      with conn.cursor() as cur:
+        cur.execute(sql,params)
+        json = cur.fetchone()
+        return json[0]
 
   # Method to wrap a SQL statement for returning a single JSON object
   def query_wrap_object(self, template):
