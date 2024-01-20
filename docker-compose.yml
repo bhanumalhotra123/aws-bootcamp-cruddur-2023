@@ -1,9 +1,10 @@
 version: "3.8"
 services:
-  backend-flask: 
+  backend-flask:
     environment:
-      CONNECTION_URL: 
-      #CONNECTION_URL: "postgresql://postgres:password@db:5432/cruddur"
+      AWS_ENDPOINT_URL: "http://dynamodb-local:8000"
+      #CONNECTION_URL: "${PROD_CONNECTION_URL}"
+      CONNECTION_URL: "postgresql://postgres:password@db:5432/cruddur"
       FRONTEND_URL: "https://3000-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
       BACKEND_URL: "https://4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
       #FRONTEND_URL: "https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
@@ -16,42 +17,39 @@ services:
       AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION}"
       AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
       AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
-      AWS_REGION: "${AWS_DEFAULT_REGION}"
       ROLLBAR_ACCESS_TOKEN: "${ROLLBAR_ACCESS_TOKEN}"
-      AWS_COGNITO_USER_POOL_ID: 'us-east-1_fpy2gmV5r'
-      AWS_COGNITO_USER_POOL_CLIENT_ID: '6roer8tk701iejmp627t0upavl'
-
+      AWS_COGNITO_USER_POOL_ID: "${AWS_COGNITO_USER_POOL_ID}"
+      AWS_COGNITO_USER_POOL_CLIENT_ID: "5b6ro31g97urk767adrbrdj1g5"    
     build: ./backend-flask
     ports:
       - "4567:4567"
     volumes:
       - ./backend-flask:/backend-flask
-
   frontend-react-js:
     environment:
       REACT_APP_BACKEND_URL: "https://4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
+      #REACT_APP_BACKEND_URL: "https://${CODESPACE_NAME}-4567.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
       REACT_APP_AWS_PROJECT_REGION: "${AWS_DEFAULT_REGION}"
       REACT_APP_AWS_COGNITO_REGION: "${AWS_DEFAULT_REGION}"
-      REACT_APP_AWS_USER_POOLS_ID: "us-east-1_fpy2gmV5r"
-      REACT_APP_CLIENT_ID: "6roer8tk701iejmp627t0upavl"
-
+      REACT_APP_AWS_USER_POOLS_ID: "ca-central-1_CQ4wDfnwc"
+      REACT_APP_CLIENT_ID: "5b6ro31g97urk767adrbrdj1g5"
     build: ./frontend-react-js
     ports:
       - "3000:3000"
     volumes:
       - ./frontend-react-js:/frontend-react-js
   dynamodb-local:
-   # https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
-   # We needed to add user:root to get this working.
-   user: root
-   command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
-   image: "amazon/dynamodb-local:latest"
-   container_name: dynamodb-local
-   ports:
-     - "8000:8000"
-   volumes:
-     - "./docker/dynamodb:/home/dynamodblocal/data"
-   working_dir: /home/dynamodblocal
+    # https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
+    # We needed to add user:root to get this working.
+    user: root
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    image: "amazon/dynamodb-local:latest"
+    container_name: dynamodb-local
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./docker/dynamodb:/home/dynamodblocal/data"
+    working_dir: /home/dynamodblocal
   db:
     image: postgres:13-alpine
     restart: always
@@ -67,7 +65,7 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
       AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
-      AWS_REGION: "${AWS_DEFAULT_REGION}"
+      AWS_REGION: "ca-central-1"
     command:
       - "xray -o -b xray-daemon:2000"
     ports:
@@ -75,7 +73,7 @@ services:
 # the name flag is a hack to change the default prepend folder
 # name when outputting the image names
 networks: 
-   internal-network:
+  internal-network:
     driver: bridge
     name: cruddur
 

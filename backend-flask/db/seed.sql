@@ -1,5 +1,5 @@
 -- this file was manually created
-INSERT INTO public.users (display_name, handle, cognito_user_id)
+INSERT INTO public.users (display_name, email, handle, cognito_user_id)
 VALUES
   ('bhanu malhotra','bhanucorrect@gmail.com', 'bhanumalhotra' ,'MOCK'),
   ('bhanuman', 'bhanumalhotra121!@gmail.com', 'bhanuman','MOCK');

@@ -65,7 +65,7 @@ class Db:
   # Method to execute a SQL statement with commit and returning functionality
   def query_commit(self, sql, params={}):
     # Print the SQL statement with a header indicating the type
-    self.print_sql('commit with returning', sql)
+    self.print_sql('commit with returning', sql, params)
 
     # Check if the SQL statement contains the keyword RETURNING
     pattern = r"\bRETURNING\b"
