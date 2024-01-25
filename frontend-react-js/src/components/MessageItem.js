@@ -21,7 +21,7 @@ export default function MessageItem(props) {
   };
 
   return (
-    <Link className='message_item' to={`/messages/@`+props.message_group.uuid}>
+    <Link className='message_item' to={`/messages/@`+props.message.handle}>
       <div className='message_avatar'></div>
       <div className='message_content'>
         <div classsName='message_meta'>
