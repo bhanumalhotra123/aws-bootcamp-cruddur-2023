@@ -16,10 +16,12 @@ https://aws.amazon.com/blogs/compute/creating-a-single-table-design-with-amazon-
 - Moved rds-update-sg-rule to rds folder and removed “rds”.
 - Created a new folder in backend-flask/bin named ddb for DynamoDB stuff.
 - Created new files in ddb folder: drop, schema-load, seed.(Also made them executable using chmod)
-- Copied create table code from AWS Boto3 documentation. It wasn’t perfect, so we adjusted code for schema.https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/create_table.html
-- 
+- Copied create table code from AWS Boto3 documentation. It wasn’t perfect, so we adjusted code for schema.  
+  
+https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/create_table.html
+    
 - Added the configuration for dynamodb in docker-compose which was commented out earlier for saving on compute.
 - Ran ./bin/ddb/schema-load from the backend-flask directory.  It created our local DynamoDB table.
-- 
+  
 ![table-created](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/32056cdb-2bab-40d9-95c7-9ad7ae8a7d21)
 
