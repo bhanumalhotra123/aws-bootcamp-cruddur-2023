@@ -16,7 +16,7 @@ https://aws.amazon.com/blogs/compute/creating-a-single-table-design-with-amazon-
 - Moved rds-update-sg-rule to rds folder and removed “rds”.
 - Created a new folder in backend-flask/bin named ddb for DynamoDB stuff.
 - Created new files in ddb folder: drop, schema-load, seed.(Also made them executable using chmod)
-- Copied create table code from AWS Boto3 documentation. It wasn’t perfect, so we adjusted code for schema.  
+- Copied create table code from AWS Boto3 documentation. It wasn’t perfect, so adjusted code for schema.  
   
 https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/create_table.html
     
@@ -25,3 +25,15 @@ https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynam
   
 ![table-created](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/32056cdb-2bab-40d9-95c7-9ad7ae8a7d21)
 
+- Created  list-tables under ddb.
+- Created drop in ddb folder.
+- Created seed in ddb folder.
+- Ran schema-load
+- Created scan and set it for local DynamoDB only, as doing a scan in production can be expensive.
+
+- Created new folder in ddb named patterns, then created 2 new files: get-conversation and list-conversations.
+
+> These allow us to begin implementing our access patterns. We first complete get-conversation, make it executable, then run it. This is similar to a scan, but
+>  we’re returning information that we queried and limiting the results. In list-conversations, we began another our of access patterns. Andrew goes through
+>  explaining the information we’re querying here as well, then we test. While testing, we go back to db.py in backend-flask/lib and update all instances of
+>  print_sql to pass the params we set while refining our queries for mock data.```
