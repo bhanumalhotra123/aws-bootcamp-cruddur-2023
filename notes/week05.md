@@ -36,4 +36,23 @@ https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynam
 > These allow us to begin implementing our access patterns. We first complete get-conversation, make it executable, then run it. This is similar to a scan, but
 >  we’re returning information that we queried and limiting the results. In list-conversations, we began another our of access patterns. Andrew goes through
 >  explaining the information we’re querying here as well, then we test. While testing, we go back to db.py in backend-flask/lib and update all instances of
->  print_sql to pass the params we set while refining our queries for mock data.```
+>  print_sql to pass the params we set while refining our queries for mock data.
+
+Added the following snippet in gitpod.yml
+```yml
+  - name: flask
+    command: |
+      cd backend-flask
+      pip install -r requirements.txt
+```
+  
+
+Made the drop file of psql by adding IF EXISTS to the statement:
+```
+psql $NO_DB_CONNECTION_URL -c "DROP DATABASE IF EXISTS cruddur;"
+```
+  
+- created ddb.py in backend-flask/lib, and began implementing code to it. 
+> Understood the difference between the Postgres database in db.py and what we’re implementing in ddb.py. In the Postgres database, we are doing initialization,
+> using a constructor to create an instance of the class, and in ddb.py it’s a stateless class. If you can do things without state, it’s much easier for testing,
+> as you just test the inputs and outputs, using simple data structures.
