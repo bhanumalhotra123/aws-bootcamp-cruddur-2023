@@ -56,3 +56,6 @@ psql $NO_DB_CONNECTION_URL -c "DROP DATABASE IF EXISTS cruddur;"
 > Understood the difference between the Postgres database in db.py and what we’re implementing in ddb.py. In the Postgres database, we are doing initialization,
 > using a constructor to create an instance of the class, and in ddb.py it’s a stateless class. If you can do things without state, it’s much easier for testing,
 > as you just test the inputs and outputs, using simple data structures.
+
+![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/13b31d0a-df83-4efe-9a63-446e4da2f215)
+
