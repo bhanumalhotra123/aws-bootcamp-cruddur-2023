@@ -115,14 +115,128 @@ We updated our HomeFeedPage.js, MessageGroupsPage.js, MessageGroupPage.js, and M
 - Updated App.js for our path for the MessageGroupPage. Instead of going to a static @:handle, it’s now dependent upon the message_group_uuid.
   
 ![messagegrouppage](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8df4378d-e622-434a-b772-fea69df113f6)
+  
 Updated this in our MessageGroupPage.js file.
 
 
+>We next moved onto making our message group definition a little more strict. In ddb.py, we updated the KeyConditionExpression with what we listed in our 
+>get-converstation.py file. We removed the hardcoded value of the year, and instead passed datetime.now()year as year. This failed, so we ended up having to put >the value into a string, like so: year = str(datetime.now().year). We moved onto updating the same value in list-conversations.py as well. After refreshing, the >data is again showing in the Messages section, but it’s listing the @handle as the page. We go into our MessageGroupItem.js file and pass out message_group_uuid >for /messages/. We also needed to update our const classes to pass the message_group_uuid as well. A quick refresh to our web app, and there’s no errors, but the >messages are not displaying. Andrew notes this is because it’s part of the query we need on the MessageGroupPage.js. We check our const loadMessageGroupData, and >it’s already passing the message_group_uuid. We need to start implementing this into our backend.
+  
+In app.py, we remove the hardcoding of user_sender_handle and update our def data_messages to pass message_group_uuid as well. (removedhardcodingWeek5) We then updated this again, this time checking for cognito_user_id and message_group_uuid. In messages.py, we updated the code to pass in the message_group_uuid called client, then it will list messages. In ddb.py, we add define a function for list_messages passing client and the message_group_uuid as well.
+  
+We previously added code to get the cognito_user_id in message_groups.py, so we add this code to messages.py as well. This is not being used now, but it’s for permissions checks we will implement later.
+  
+The mock messages however, are in the wrong order. To fix this, we had to reverse the items in our code. In ddb.py, we added items.reverse() to our code, then from did the same from our ddb/patterns/get-conversations file as well. For our conversations, we need to be able to differentiate between starting a new conversation and contiuing an existing one. To do this, we added a conditional if statement with an else passing along either the handle (new conversation) or message_group_uuid(existing conversation).
 
 
 
 
 
+
+  
+
+
+
+- Need to create a Dynamo DB Stream trigger so as to update the message groups.
+- To start this, we ran ./bin/ddb/schema-load prod. We then logged into AWS and checked DynamoDB to see our new table.
+
+  ![prod-ddb-table](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/f8fe974d-58ec-4daa-86ca-0ee7dda61699)
+
+
+
+We next needed to turn on streaming through the console. To do this, we went to Tables > Exports and streams > Turn on. We finalized this by selecting New Image.
+
+  ![Screenshot 2024-01-22 220506](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/44e5fc6b-ed98-434d-8a23-e9aed2a57b05)
+
+  
+
+-  Gateway endpoints, which are whats used for connecting to DynamoDB, do not incur additional charges. Created VPC endpoint in AWS named ddb-cruddur1 then connected it to DynamoDB as a service.
+    
+![Screenshot 2024-01-22 223230](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/62a67f7d-7734-4801-b04f-db8b39f0a443)
+
+  
+From here, we needed to create a Lambda function to run for every time we create a message in Cruddur (our web app). While reviewing the Lambda code to create the trigger, Andrew made note that it’s recreating the message group rows with the new sort key value from DynamoDB. This is because in DynamoDB, we cannot update these values. They must be removed and recreated.
+
+
+## Extract Key Attributes
+
+When something changes in our database, the event tells us what changed. We look at this event to figure out which item in our database was affected. Every item in our database has a special key, like its ID, called the "primary key" (pk) and other keys that help sort items (like the "sort key" (sk)). We extract these keys from the event so we know which item changed.
+
+## Message Group Processing
+
+Sometimes, our items in the database belong to groups, like messages sent in a chat group. If the event tells us that a message was changed and it starts with 'MSG#', it means it belongs to a message group. We then figure out the unique ID of that message group (group_uuid) and what the message says.
+
+## Query DynamoDB
+
+Now that we know the group's unique ID, we want to find all the messages in that group in our database. We have a special way of finding things quickly in our database, like an index in a book. We use this special way (index) to find all the messages belonging to that group quickly.
+
+
+
+```
+import json
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
+
+dynamodb = boto3.resource(
+ 'dynamodb',
+ region_name='us-east-1',
+ endpoint_url="http://dynamodb.us-east-1.amazonaws.com"
+)
+
+def lambda_handler(event, context):
+  print('event-data',event)
+
+  eventName = event['Records'][0]['eventName']
+  if (eventName == 'REMOVE'):
+    print("skip REMOVE event")
+    return
+  pk = event['Records'][0]['dynamodb']['Keys']['pk']['S']
+  sk = event['Records'][0]['dynamodb']['Keys']['sk']['S']
+  if pk.startswith('MSG#'):
+    group_uuid = pk.replace("MSG#","")
+    message = event['Records'][0]['dynamodb']['NewImage']['message']['S']
+    print("GRUP ===>",group_uuid,message)
+    
+    table_name = 'cruddur-messages'
+    index_name = 'message-group-sk-index'
+    table = dynamodb.Table(table_name)
+    data = table.query(
+      IndexName=index_name,
+      KeyConditionExpression=Key('message_group_uuid').eq(group_uuid)
+    )
+    print("RESP ===>",data['Items'])
+    
+    # recreate the message group rows with new SK value
+    for i in data['Items']:
+      delete_item = table.delete_item(Key={'pk': i['pk'], 'sk': i['sk']})
+      print("DELETE ===>",delete_item)
+      
+      response = table.put_item(
+        Item={
+          'pk': i['pk'],
+          'sk': sk,
+          'message_group_uuid':i['message_group_uuid'],
+          'message':message,
+          'user_display_name': i['user_display_name'],
+          'user_handle': i['user_handle'],
+          'user_uuid': i['user_uuid']
+        }
+      )
+      print("CREATE ===>",response)
+```
+
+From the AWS console, we navigate to Lambda, then create a new trigger named cruddur-messageing-stream, using Python 3.9 runtime, and x86_64 architecture. For the execution role, we granted it a new role with Lambda permissions. We then enabled the VPC and selected our pre-existing one we configured last week, then selected “Create.”
+
+
+From here we went to Configuration > Permissions to set IAM role permissions for the function. We ran into a few snags during this process, as the pre-existing policies in AWS did not give us the role permissions we needed for our function to operate correctly. We found that we had not yet added our GSI (Global Secondary Indexes) to our db yet, so we deleted the DynamoDB table we created moments ago in AWS, then edited our ddb/schema-load file to include the GSI.
+
+
+Once the code was added to our ddb/schema-load file, we again ran ./bin/ddb/schema-load prod from terminal to recreate our table inside AWS DynamoDB. Next, we went back through and again turned on stremaing, setting stream details to New image. We circled back to VPC just to make sure that setup is still configured, it was. Now we assign the trigger we created earlier to our table.
+
+
+Now all we need to do is make our web app use production data. We went back over to docker-compose.yml and commented out the AWS_ENDPOINT_URL variable we had set previously.
+
+After that, we then composed up our environment, and began testing the function. We navigated to the Messages page, and my attempts to send a message did not work, yet Andrew’s did. We viewed the Cloudwatch logs, and Andrew was getting errors, whereas my log was blank because the Lambda did not run. Due to the errors received in the Cloudwatch logs, we continued on with the permissions issue I had mentioned before in regards to the IAM role permissions of the Lambda function. We removed the existing IAM role we assigned, then created a new inline policy granting our Lambda access to DynamoDB, giving it query, deleteitem, and putitem actions. Next we specified our ARNs for our resources, created a new folder inside our aws folder, then created a new json file named cruddur-messaging-stream and pasted the json from the policy we just created. We then added our Lambda code to our repository as well. For our policy, we then named it cruddur-messaging-stream-dynamodb and saved it. With the new policy enabled, we tested again, then went back to the Cloudwatch logs. Andrew’s Cloudwatch logs again gave errors, mine was blank, as the Lambda still had not run. I continued on, updated the Lambda along with Andrew, deployed the changes, then again tested the web app. More errors to work through. As it turned out, we were returning a record of events removed. We edited the Lambda again, this time adding a conditional that if the event is a remove event, we will return early.
 
 
 
