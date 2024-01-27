@@ -64,3 +64,26 @@ psql $NO_DB_CONNECTION_URL -c "DROP DATABASE IF EXISTS cruddur;"
 ![db.py vs ddb.py](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/13b31d0a-df83-4efe-9a63-446e4da2f215)
 
 
+- Had hardcoded the values of user_handle in last week, created a new file named cognito/list-users under backend-flask/bin.
+ https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp/client/list_users.html
+  
+```
+export AWS_COGNITO_USER_POOL_ID="us-east-1_xxxx"
+gp env AWS_COGNITO_USER_POOL_ID="us-east-1_xxxx"
+```
+  
+- Updated AWS_COGNITO_USER_POOL_ID in docker-compose.yml to use the variable that was saved. Ran the file for list-users.
+  ![list-users](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/47f263e7-47f7-4e0a-bf00-09ce9ce9634b)
+
+
+- Under bin/db created update_cognito_user_ids.
+> The sql command is updating our public.users table setting the cognito user id based on the sub we passed in. We then run a query commit to execute it. Further 
+> down in the code, we’re doing the same thing that we did in list-users, but instead of printing the data, we’re returning it. Before we can do that, we have to 
+> seed our data. We add a path to our setup file for update_cognito_user_ids. We run ./bin/db/setup, but get an error on that path, so instead we run 
+> update_cognito_user_ids after running db/setup. We’re not returning the information we wanted, so we access db.py and find our query_commit definition. We were 
+> missing params from being passed, so we added it, then back in terminal ran the script again. This time, it returned the information we wanted.
+
+![update-users-in-db](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/d8f065be-459c-4e14-9960-b7cc95c2ce85)
+
+
+
