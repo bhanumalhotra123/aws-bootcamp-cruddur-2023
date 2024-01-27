@@ -23,11 +23,15 @@ https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynam
 - Added the configuration for dynamodb in docker-compose which was commented out earlier for saving on compute.
 - Ran ./bin/ddb/schema-load from the backend-flask directory.  It created our local DynamoDB table.
   
-![table-created](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/32056cdb-2bab-40d9-95c7-9ad7ae8a7d21)
+![Schemaload-ddb](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/c9bdec40-9edc-44a5-8ade-9673e8b43ba5)
+
 
 - Created  list-tables under ddb.
 - Created drop in ddb folder.
-- Created seed in ddb folder.
+- Created seed in ddb folder.(The script fetches user information from a PostgreSQL database, creates message groups in DynamoDB, and populates these groups with messages, demonstrating integration between the two databases for user messaging functionality.)
+![Seeding](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/3f48da00-c3f7-41f5-a78a-5834b33d366a)
+
+  
 - Ran schema-load
 - Created scan and set it for local DynamoDB only, as doing a scan in production can be expensive.
 
@@ -57,5 +61,6 @@ psql $NO_DB_CONNECTION_URL -c "DROP DATABASE IF EXISTS cruddur;"
 > using a constructor to create an instance of the class, and in ddb.py it’s a stateless class. If you can do things without state, it’s much easier for testing,
 > as you just test the inputs and outputs, using simple data structures.
 
-![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/13b31d0a-df83-4efe-9a63-446e4da2f215)
+![db.py vs ddb.py](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/13b31d0a-df83-4efe-9a63-446e4da2f215)
+
 
