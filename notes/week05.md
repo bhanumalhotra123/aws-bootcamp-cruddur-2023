@@ -129,6 +129,35 @@ We previously added code to get the cognito_user_id in message_groups.py, so we 
 The mock messages however, are in the wrong order. To fix this, we had to reverse the items in our code. In ddb.py, we added items.reverse() to our code, then from did the same from our ddb/patterns/get-conversations file as well. For our conversations, we need to be able to differentiate between starting a new conversation and contiuing an existing one. To do this, we added a conditional if statement with an else passing along either the handle (new conversation) or message_group_uuid(existing conversation).
 
 
+In app.py, we need to adjust what we have for a create function. Under the definition for data_create_message, we again remove the hardcoding for the user_handle, then pass the same code we previously passed, this time passing the message, message_group_uuid, cognito_user_id, and the user_receiver_handle. We also needed to update our variables for message_group_uuid and user_receiver_handle to request.json and get the message_group_uuid and handle. Additionally we added an if else statement indicating if the message_group_uuid is None, we’re creating a new message. If it is not, we’re doing an update. Essentially similar to what we did earlier in ddb.py. Since we’re still working on existing messages, we comment out the create elif statement for now.
+
+Back in ddb.py, we update our code to define our create_message function here as well. It will generate the uuid for us, since DynamoDB cannot by itself, it will create a record with message_group_uuid, message, message_uuid, amongst more information.
+
+
+When we refresh our web app again, we’re not getting errors from the backend logs, but upon using Inspect from our browser, it’s giving TypeError: Cannot set property json of Object which has only a getter.
+
+
+We jump back over create_message.py and find we have a template added that we need to create. We go into backend-flask/db/sql/users directory and create create_message_users.sql.
+
+
+When we refresh our web app this time, it will now post messages(data) correctly.
+
+
+Now that that is working as intended, we now go back and focus on creating a new conversation. In frontend-react, we navigate to src/App.js and add a new path for a new page, MessageGroupNewPage. We then add the import to the top of the page as well. We then move over to src/pages and create the new page, MessageGroupNewPage.js. In this page, we import CheckAuth, then remove the function and pass our setUser. We then create a 3rd mock user for our database to our seed.sql file in backend-flask/db. So we don’t have to compose down our environment and then compose it back up, instead we pass the SQL query locally through the terminal after connecting to our Postgres db using ./bin/db/connect, then running our query of manually.
+
+
+In app.py we define a new function data_users_short passing in the handle. We need to create a new service for this. In backend-flask/services we create a new one, users_short.py. (usershortWeek5) We then go into our sql/users and create a new file called short.sql.
+
+
+Also in frontend-react/components we create MessageGroupNewItem.js. We also have to go back and update MessageGroupFeed.js. A refresh of our web app, and we have another conversation. In MessageForm.js, we add a conditional to create messages and then we uncomment the lines of code we previously commented out in create_message.py to imlement it. In ddb.py, we then define the create_message_group function utilizing batch write and import botocore.exceptions as well.
+
+
+
+
+
+
+
+
 
 
 
@@ -280,9 +309,9 @@ After deletion and recreation:
 | pk                | sk                      | message                |
 |-------------------|-------------------------|------------------------|
 | MSG#Alice#Bob   | 2024-01-30T12:00:00Z   | "Hi Bob!"              |
-| MSG#Alice#Bob   | 2024-01-30T12:05:00Z   | "How are you doing?"   | <- Updated Message
 | MSG#Alice#Bob   | 2024-01-30T12:10:00Z   | "I'm good, thanks!"    |
 | MSG#Alice#Bob   | 2024-01-30T12:15:00Z   | "Want to grab lunch?"  |
+| MSG#Alice#Bob   | 2024-01-30T12:25:00Z   | "How are you doing?"   | <- Updated Message
 
 In this case, "How are you doing?" is re-inserted into the table with the same timestamp. However, since the sort key is updated, the message is correctly positioned within the conversation chronologically according to its new content and timestamp.
 
@@ -337,7 +366,9 @@ Turned out, we were returning a record of events removed. We edited the Lambda a
 
 ![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/a1db4cf1-dd1f-4d74-9d2f-a9ba8ebad679)
 
-  
+![Screenshot 2024-01-28 042331](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/04e8a92b-bdd6-4879-a685-54fefaf3a762)
+
+
 
 ```
 Week 5 Notes Security Considerations – 
