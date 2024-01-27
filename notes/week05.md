@@ -157,21 +157,6 @@ We next needed to turn on streaming through the console. To do this, we went to 
   
 From here, we needed to create a Lambda function to run for every time we create a message in Cruddur (our web app). While reviewing the Lambda code to create the trigger, Andrew made note that it’s recreating the message group rows with the new sort key value from DynamoDB. This is because in DynamoDB, we cannot update these values. They must be removed and recreated.
 
-
-## Extract Key Attributes
-
-When something changes in our database, the event tells us what changed. We look at this event to figure out which item in our database was affected. Every item in our database has a special key, like its ID, called the "primary key" (pk) and other keys that help sort items (like the "sort key" (sk)). We extract these keys from the event so we know which item changed.
-
-## Message Group Processing
-
-Sometimes, our items in the database belong to groups, like messages sent in a chat group. If the event tells us that a message was changed and it starts with 'MSG#', it means it belongs to a message group. We then figure out the unique ID of that message group (group_uuid) and what the message says.
-
-## Query DynamoDB
-
-Now that we know the group's unique ID, we want to find all the messages in that group in our database. We have a special way of finding things quickly in our database, like an index in a book. We use this special way (index) to find all the messages belonging to that group quickly.
-
-
-
 ```
 import json
 import boto3
@@ -224,21 +209,133 @@ def lambda_handler(event, context):
       )
       print("CREATE ===>",response)
 ```
+  
 
-From the AWS console, we navigate to Lambda, then create a new trigger named cruddur-messageing-stream, using Python 3.9 runtime, and x86_64 architecture. For the execution role, we granted it a new role with Lambda permissions. We then enabled the VPC and selected our pre-existing one we configured last week, then selected “Create.”
+## Overview
+
+The Lambda function is designed to update the position of a message within a message group that already exists in the DynamoDB table.
+
+## Existing Message Group
+
+The DynamoDB table contains multiple message groups, each identified by a unique partition key (pk). Within each message group, there are multiple messages stored with different sort key values (sk), representing their order within the group.
+
+## Event Trigger
+
+When an event occurs, such as a user reordering a message within a group, DynamoDB streams capture this event and trigger the Lambda function.
+
+## Processing by Lambda Function
+
+The Lambda function processes the event and extracts relevant information, such as the message group's unique identifier (group_uuid) and the updated sort key value (sk) of the message.
+
+## Querying Existing Messages
+
+The function queries the DynamoDB table using an index to retrieve all messages within the message group.
+
+## Updating Sort Key
+
+For each message retrieved from the query, the function updates its sort key value to reflect the new position or order within the group.
+
+## Result
+
+After the function completes execution, the messages within the group are repositioned according to the updated sort key values, ensuring that they are correctly ordered based on the new order specified by the event.
+
+ When you update the sort key without deleting and recreating items, the sort key is changed, but the relative order of items within the table remains the same. However, if you delete and recreate items with updated sort keys, not only are the sort keys changed, but the items are also repositioned correctly according to the new sort order, ensuring that the table maintains the correct chronological order.
+
+So, deleting and recreating items is crucial when you need to update the sort keys and maintain the sorted order within the table. This ensures consistency and accuracy in the representation of data.
+
+
+
+# Conversation Update Example
+
+Consider a scenario where we have a DynamoDB table storing messages exchanged between two people in a conversation.
+
+## Original Table
+
+| pk                | sk                      | message        |
+|-------------------|-------------------------|----------------|
+| MSG#Alice#Bob   | 2024-01-30T12:00:00Z   | "Hi Bob!"      |
+| MSG#Alice#Bob   | 2024-01-30T12:05:00Z   | "How are you?" |
+| MSG#Alice#Bob   | 2024-01-30T12:10:00Z   | "I'm good, thanks!" |
+| MSG#Alice#Bob   | 2024-01-30T12:15:00Z   | "Want to grab lunch?" |
+
+## Update Message
+
+Let's say Alice wants to update her message "How are you?" to "How are you doing?" and also update the timestamp of the message.
+
+### Without Deleting and Recreating Items
+
+| pk                | sk                      | message                |
+|-------------------|-------------------------|------------------------|
+| MSG#Alice#Bob   | 2024-01-30T12:00:00Z   | "Hi Bob!"              |
+| MSG#Alice#Bob   | 2024-01-30T12:05:00Z   | "How are you doing?"   | <- Updated Message
+| MSG#Alice#Bob   | 2024-01-30T12:10:00Z   | "I'm good, thanks!"    |
+| MSG#Alice#Bob   | 2024-01-30T12:15:00Z   | "Want to grab lunch?"  |
+
+In this case, only the message content is updated, but the relative order of messages remains the same.
+
+### Deleting and Recreating Items
+
+After deletion and recreation:
+
+| pk                | sk                      | message                |
+|-------------------|-------------------------|------------------------|
+| MSG#Alice#Bob   | 2024-01-30T12:00:00Z   | "Hi Bob!"              |
+| MSG#Alice#Bob   | 2024-01-30T12:05:00Z   | "How are you doing?"   | <- Updated Message
+| MSG#Alice#Bob   | 2024-01-30T12:10:00Z   | "I'm good, thanks!"    |
+| MSG#Alice#Bob   | 2024-01-30T12:15:00Z   | "Want to grab lunch?"  |
+
+In this case, "How are you doing?" is re-inserted into the table with the same timestamp. However, since the sort key is updated, the message is correctly positioned within the conversation chronologically according to its new content and timestamp.
+
+This illustrates how deleting and recreating items within a conversation ensures not only the update of message content but also the maintenance of the correct chronological order of messages.
+
+
+From the AWS console, we navigate to Lambda, then create a new trigger named cruddur-messageing-stream, using Python 3.9 runtime, and x86_64 architecture. For the execution role, we granted it a new role with Lambda permissions. We then enabled the VPC and selected our pre-existing one we configured last week, then selected “Create”
+
 
 
 From here we went to Configuration > Permissions to set IAM role permissions for the function. We ran into a few snags during this process, as the pre-existing policies in AWS did not give us the role permissions we needed for our function to operate correctly. We found that we had not yet added our GSI (Global Secondary Indexes) to our db yet, so we deleted the DynamoDB table we created moments ago in AWS, then edited our ddb/schema-load file to include the GSI.
 
+![gsi](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8fb679a2-0c12-4aac-929a-245770092fa7)
 
-Once the code was added to our ddb/schema-load file, we again ran ./bin/ddb/schema-load prod from terminal to recreate our table inside AWS DynamoDB. Next, we went back through and again turned on stremaing, setting stream details to New image. We circled back to VPC just to make sure that setup is still configured, it was. Now we assign the trigger we created earlier to our table.
+
+Once the code was added to our ddb/schema-load file, we again ran ./bin/ddb/schema-load prod from terminal to recreate our table inside AWS DynamoDB. Next, we went back through and again turned on stremaing, setting stream details to New image. 
+- Now we assign the trigger we created earlier to our table.
+
+
+  ![add trigger](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/463ce0d8-007c-4ddf-a7d8-0b4de00dd234)
 
 
 Now all we need to do is make our web app use production data. We went back over to docker-compose.yml and commented out the AWS_ENDPOINT_URL variable we had set previously.
 
-After that, we then composed up our environment, and began testing the function. We navigated to the Messages page, and my attempts to send a message did not work, yet Andrew’s did. We viewed the Cloudwatch logs, and Andrew was getting errors, whereas my log was blank because the Lambda did not run. Due to the errors received in the Cloudwatch logs, we continued on with the permissions issue I had mentioned before in regards to the IAM role permissions of the Lambda function. We removed the existing IAM role we assigned, then created a new inline policy granting our Lambda access to DynamoDB, giving it query, deleteitem, and putitem actions. Next we specified our ARNs for our resources, created a new folder inside our aws folder, then created a new json file named cruddur-messaging-stream and pasted the json from the policy we just created. We then added our Lambda code to our repository as well. For our policy, we then named it cruddur-messaging-stream-dynamodb and saved it. With the new policy enabled, we tested again, then went back to the Cloudwatch logs. Andrew’s Cloudwatch logs again gave errors, mine was blank, as the Lambda still had not run. I continued on, updated the Lambda along with Andrew, deployed the changes, then again tested the web app. More errors to work through. As it turned out, we were returning a record of events removed. We edited the Lambda again, this time adding a conditional that if the event is a remove event, we will return early.
+After that, we then composed up our environment, and began testing the function.
+
+Added IAM policy to lambda:
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Query"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-east-1:xxxx:table/cruddur-messages",
+                "arn:aws:dynamodb:us-east-1:xxxx:table/cruddur-messages/index/message-group-sk-index"
+            ]
+        }
+    ]
+  }
+```
+
+With the new policy enabled, we tested again, then went back to the Cloudwatch logs.
+Turned out, we were returning a record of events removed. We edited the Lambda again, this time adding a conditional that if the event is a remove event, we will return early.
 
 
+![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/a1db4cf1-dd1f-4d74-9d2f-a9ba8ebad679)
 
   
 
