@@ -239,6 +239,7 @@ def lambda_handler(event, context):
       print("CREATE ===>",response)
 ```
   
+DynamoDB does not allow you to directly update the sort key of an existing item. Therefore, if you want to change the sort key of a message within a message group (for example, to reflect a new timestamp), you must delete the existing item and insert a new one with the updated sort key. This is likely why the code deletes and re-adds messages within the group.  
 
 ## Overview
 
@@ -272,52 +273,7 @@ After the function completes execution, the messages within the group are reposi
 
 So, deleting and recreating items is crucial when you need to update the sort keys and maintain the sorted order within the table. This ensures consistency and accuracy in the representation of data.
 
-
-
-# Conversation Update Example
-
-Consider a scenario where we have a DynamoDB table storing messages exchanged between two people in a conversation.
-
-## Original Table
-
-| pk                | sk                      | message        |
-|-------------------|-------------------------|----------------|
-| MSG#Alice#Bob   | 2024-01-30T12:00:00Z   | "Hi Bob!"      |
-| MSG#Alice#Bob   | 2024-01-30T12:05:00Z   | "How are you?" |
-| MSG#Alice#Bob   | 2024-01-30T12:10:00Z   | "I'm good, thanks!" |
-| MSG#Alice#Bob   | 2024-01-30T12:15:00Z   | "Want to grab lunch?" |
-
-## Update Message
-
-Let's say Alice wants to update her message "How are you?" to "How are you doing?" and also update the timestamp of the message.
-
-### Without Deleting and Recreating Items
-
-| pk                | sk                      | message                |
-|-------------------|-------------------------|------------------------|
-| MSG#Alice#Bob   | 2024-01-30T12:00:00Z   | "Hi Bob!"              |
-| MSG#Alice#Bob   | 2024-01-30T12:05:00Z   | "How are you doing?"   | <- Updated Message
-| MSG#Alice#Bob   | 2024-01-30T12:10:00Z   | "I'm good, thanks!"    |
-| MSG#Alice#Bob   | 2024-01-30T12:15:00Z   | "Want to grab lunch?"  |
-
-In this case, only the message content is updated, but the relative order of messages remains the same.
-
-### Deleting and Recreating Items
-
-After deletion and recreation:
-
-| pk                | sk                      | message                |
-|-------------------|-------------------------|------------------------|
-| MSG#Alice#Bob   | 2024-01-30T12:00:00Z   | "Hi Bob!"              |
-| MSG#Alice#Bob   | 2024-01-30T12:10:00Z   | "I'm good, thanks!"    |
-| MSG#Alice#Bob   | 2024-01-30T12:15:00Z   | "Want to grab lunch?"  |
-| MSG#Alice#Bob   | 2024-01-30T12:25:00Z   | "How are you doing?"   | <- Updated Message
-
-In this case, "How are you doing?" is re-inserted into the table with the same timestamp. However, since the sort key is updated, the message is correctly positioned within the conversation chronologically according to its new content and timestamp.
-
-This illustrates how deleting and recreating items within a conversation ensures not only the update of message content but also the maintenance of the correct chronological order of messages.
-
-
+  
 From the AWS console, we navigate to Lambda, then create a new trigger named cruddur-messageing-stream, using Python 3.9 runtime, and x86_64 architecture. For the execution role, we granted it a new role with Lambda permissions. We then enabled the VPC and selected our pre-existing one we configured last week, then selected “Create”
 
 
