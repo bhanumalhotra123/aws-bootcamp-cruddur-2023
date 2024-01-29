@@ -32,7 +32,7 @@ aws rds create-db-instance \
 ```
 
 
-![Screenshot 2024-01-07 013241](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/d665c087-5a6b-403d-8fad-8aee64dfd0d4)
+![amazon-postgress](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/d665c087-5a6b-403d-8fad-8aee64dfd0d4)
 
  to connect to Postgres locally, use this command:
 
