@@ -1,5 +1,24 @@
-aws ecs execute-command --cluster <cluster-name> \
-    --task <task-id> \
-    --container <container-name> \
+#! /usr/bin/bash
+
+set -e # stop if it fails at any point
+
+if [ -z "$1" ]; then
+  echo "No TASK_ID argument supplied eg ./bin/ecs/connect-to-service 147442bff9ad4dc29e72ab94698fe475 backend-flask"
+  exit 1
+fi
+TASK_ID=$1
+
+if [ -z "$2" ]; then
+  echo "No CONTAINER_NAME argument supplied eg ./bin/ecs/connect-to-service 147442bff9ad4dc29e72ab94698fe475 backend-flask" 
+  exit 1
+fi
+CONTAINER_NAME=$2
+
+echo $TASK_ID
+echo $CONTAINER_NAME
+
+aws ecs execute-command --cluster cruddur \
+    --task $TASK_ID \
+    --container $CONTAINER_NAME \
     --interactive \
     --command "/bin/sh"
