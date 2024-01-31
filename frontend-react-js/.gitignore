@@ -1,3 +1,6 @@
+docker/**/*
+frontend-react-js/build/*
+
 # Logs
 logs
 *.log
