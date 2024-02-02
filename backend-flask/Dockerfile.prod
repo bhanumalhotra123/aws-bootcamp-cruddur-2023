@@ -23,3 +23,5 @@ EXPOSE ${PORT}
 # CMD (Command)
 # python3 -m flask run --host=0.0.0.0 --port=4567
 CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=4567", "--no-debug", "--no-debugger", "--no-reload"]
+
+docker tag backend-flask:latest 774944129490.dkr.ecr.us-east-1.amazonaws.com/backend-flask:latest
