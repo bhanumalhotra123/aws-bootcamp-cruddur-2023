@@ -4,7 +4,7 @@
     "desiredCount": 1,
     "enableECSManagedTags": true,
     "enableExecuteCommand": true,
-        "loadBalancers": [
+    "loadBalancers": [
         {
             "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:774944129490:targetgroup/cruddur-frontend-react-js/5baf112bdeefa186",
             "containerName": "frontend-react-js",
