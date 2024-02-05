@@ -9,7 +9,7 @@ import uuid  # Universal Unique Identifier
 
 # Set the current path and parent path for importing custom modules
 current_path = os.path.dirname(os.path.abspath(__file__))
-parent_path = os.path.abspath(os.path.join(current_path, '..', '..'))
+parent_path = os.path.abspath(os.path.join(current_path, '..', '..', 'backend-flask'))
 sys.path.append(parent_path)
 
 # Import a custom database module
