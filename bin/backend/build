@@ -1,10 +1,10 @@
 #! /usr/bin/bash
 
 ABS_PATH=$(readlink -f "$0")
-FRONTEND_PATH=$(dirname $ABS_PATH)
-BIN_PATH=$(dirname $FRONTEND_PATH)
+BACKEND_PATH=$(dirname $ABS_PATH)
+BIN_PATH=$(dirname $BACKEND_PATH)
 PROJECT_PATH=$(dirname $BIN_PATH)
-FRONTEND_REACT_JS_PATH="$PROJECT_PATH/frontend-react-js"
+BACKEND_FLASK_PATH="$PROJECT_PATH/backend-flask"
 
 
 docker build \
