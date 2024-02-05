@@ -2,7 +2,7 @@ import './MessageGroupPage.css';
 import React from "react";
 import { useParams } from 'react-router-dom';
 
-import checkAuth from '../lib/CheckAuth';
+import {CheckAuth} from '../lib/CheckAuth';
 import DesktopNavigation  from '../components/DesktopNavigation';
 import MessageGroupFeed from '../components/MessageGroupFeed';
 import MessagesFeed from '../components/MessageFeed';
