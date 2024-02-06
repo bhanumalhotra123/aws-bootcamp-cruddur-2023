@@ -1,6 +1,10 @@
 FROM 774944129490.dkr.ecr.us-east-1.amazonaws.com/cruddur-python:3.10-slim-buster
 # Inside Container
 # make a new folder inside container
+
+RUN apt-get update -y
+RUN apt-get install iputils-ping -y
+
 WORKDIR /backend-flask
 
 # Outside Container -> Inside Container
