@@ -63,6 +63,7 @@ services:
 # name when outputting the image names
 networks: 
   cruddur-net:
+    external: true
     driver: bridge
     name: cruddur-net
 
