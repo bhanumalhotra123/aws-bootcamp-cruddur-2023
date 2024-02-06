@@ -7,7 +7,7 @@ services:
     volumes:
       - ./backend-flask:/backend-flask
     env_file:
-      - .env.backend-flask
+      - backend-flask.env
   frontend-react-js:
     build: ./frontend-react-js
     ports:
@@ -15,7 +15,7 @@ services:
     volumes:
       - ./frontend-react-js:/frontend-react-js
     env_file:
-      - .env.frontend-react-js
+      - frontend-react-js.env
   dynamodb-local:
     # https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
     # We needed to add user:root to get this working.
