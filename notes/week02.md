@@ -67,3 +67,71 @@ tracer = trace.get_tracer(__name__)
 
 >These lines initialize tracing for Flask and Requests, and set up an exporter to send data to Honeycomb using the OpenTelemetry Protocol (OTLP). The TracerProvider and BatchSpanProcessor manage the tracing process, while get_tracer retrieves the tracer instance. This setup enables capturing and exporting telemetry data to Honeycomb for analysis and monitoring.
 
+```
+# Initialize automatic instrumentation with Flask
+app = Flask(__name__)
+FlaskInstrumentor().instrument_app(app)
+RequestsInstrumentor().instrument()
+```
+
+
+>These lines initialize Flask's automatic instrumentation and instrumentation for Requests. The FlaskInstrumentor instruments the Flask application, while >RequestsInstrumentor instruments the Requests library for tracing. This setup enables automatic tracing of Flask endpoints and outgoing HTTP requests.
+
+
+>FlaskInstrumentor primarily focuses on instrumenting Flask itself, capturing data related to incoming requests and outgoing responses within the Flask framework. However, while FlaskInstrumentor can capture some information about outgoing HTTP requests made by the Flask application, it may not provide as detailed or comprehensive telemetry data as RequestsInstrumentor.
+
+>RequestsInstrumentor, on the other hand, is specifically designed to instrument the Requests library, which is commonly used within Flask applications to make outgoing HTTP requests to external services or APIs. RequestsInstrumentor ensures that detailed telemetry data about these outgoing requests, including timing information, headers, and other metadata, is captured accurately.
+
+
+
+
+```
+OTEL_SERVICE_NAME: 'bakend-flask'
+OTEL_EXPORTER_OTLP_ENDPOINT: "https://api.honeycomb.io"
+OTEL_EXPORTER_OTLP_HEADERS: "x-honeycomb-team=${HONEYCOMB_API_KEY}"
+```
+  
+> When OpenTelemetry initializes, it checks for specific environment variables that follow a naming convention to determine configuration parameters. For example, the OTEL_EXPORTER_OTLP_ENDPOINT environment variable is recognized as the endpoint configuration for the OTLP exporter.
+
+  
+
+```
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
+
+
+# Show this in the logs within the backend-flask app (STDOUT)
+simple_processor = SimpleSpanProcessor(ConsoleSpanExporter())
+provider.add_span_processor(processor)
+```
+
+>OpenTelemetry, a span represents a segment of code execution or a unit of work within an application. Breaking the flow of information into parts, each represented by a span, allows you to track the lifecycle of an operation as it traverses different components and services.
+  
+>For example, in a distributed system handling an HTTP request, you might have spans representing the processing of the request on the client side, the handling of the request on the server side, interactions with external services like a database, and the generation of the response back to the client. Each of these spans captures information about the corresponding segment of code execution, including timing, contextual details, and any related operations, enabling you to trace the flow of information across the system and understand its behavior and performance.
+  
+>ConsoleSpanExporter() creates an exporter that sends spans (tracing data) to the console, typically for debugging or development purposes. Spans exported to the console are typically displayed in the terminal or log output.
+  
+>SimpleSpanProcessor(ConsoleSpanExporter()) creates a simple span processor that forwards spans to the specified exporter (in this case, the console exporter). The simple span processor doesn't batch or buffer spans; it simply sends each span to the exporter immediately after it's finished.
+  
+>Finally, provider.add_span_processor(processor) adds the span processor to the tracer provider. This ensures that spans collected by the tracer are processed by the simple span processor and exported to the console.
+
+
+
+
+
+Configured the ports for the frontend and backend to remain open(public) by adding port information to our gitpod.yml file:
+
+```
+ports:
+  - name: frontend
+    port: 3000
+    onOpen: open-browser
+    visibility: public
+  - name: backend
+    port: 4567
+    visibility: public
+```
+
+
+
+
+   
