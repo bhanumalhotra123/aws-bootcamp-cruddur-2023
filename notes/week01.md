@@ -101,8 +101,8 @@ import NotificationsFeedPage from './pages/NotificationsFeedPage';
   
   
 Then under pages, we created the pages NotificationsFeedPage.js and NotificationsFeedPage.css.
-[notificationfeedpage.js](../frontend-react-js/src/pages/NotificationFeedPage.js)
-[notificationfeedpage.css](../frontend-react-js/src/pages/NotificationFeedPage.css)
+[notificationfeedpage.js](../frontend-react-js/src/pages/NotificationsFeedPage.js)
+[notificationfeedpage.css](../frontend-react-js/src/pages/NotificationsFeedPage.css)
 Used the HomeFeedPage.js and  editing it to reflect the notification page:
 > This React component represents a page for displaying notifications. It fetches notification data from a backend API upon rendering and checks user authentication using cookies. It renders a desktop navigation bar, content area containing forms for adding activities and replies, and an activity feed displaying notifications. The sidebar displays user information.
 
