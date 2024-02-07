@@ -118,6 +118,18 @@ provider.add_span_processor(processor)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 Configured the ports for the frontend and backend to remain open(public) by adding port information to our gitpod.yml file:
 
 ```
