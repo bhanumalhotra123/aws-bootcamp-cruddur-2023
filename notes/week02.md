@@ -25,7 +25,10 @@ Open Telemetry is like a toolbox designed to help developers peek into the inner
 Now, think of Honeycomb as a big warehouse where you can store and analyze all this telemetry data. It's like having a super-powered magnifying glass that lets you zoom in and examine every tiny detail of your software's behavior.
 So, when we say Honeycomb supports Open Telemetry, we mean that it's like saying, "Hey, Honeycomb is ready to work with whatever data Open Telemetry gathers." And because we're setting up Open Telemetry within our system, we can directly send all that juicy telemetry data straight to Honeycomb's doorstep. 
 It's like setting up a pipeline from our software's brain to Honeycomb's analytical engine, so we can gain insights and understand exactly what's going on under the hood.
-  
+
+
+  ![Honeycomb](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8c5910a6-49ad-41d0-a4fa-7175e24f5588)
+
   
 We began by added installation instructions for Open Telemetry by adding the following files to our ‘requirements.txt’:
   
@@ -117,6 +120,53 @@ provider.add_span_processor(processor)
 
 
 
+# AWS X-RAY
+
+AWS X-Ray is a distributed tracing service that helps developers analyze and debug applications in a distributed environment. It allows you to trace requests made to your application as they travel through various AWS resources and services, helping you identify the root cause of issues and bottlenecks.
+  
+With X-Ray, you can gain insights into how your application is performing and how it interacts with other AWS resources and services, such as EC2 instances, Lambda functions, API Gateway, and more. X-Ray generates a map of your application’s architecture, showing how different services are connected, and providing real-time visibility into the performance and behavior of your application.
+  
+X-Ray provides several features to help developers, including:
+  
+Trace Analysis: X-Ray collects trace data and generates a visual representation of the requests and how they interact with each other. Developers can use this data to identify the cause of issues and optimize the performance of their applications.
+  
+Service Maps: X-Ray creates a service map that shows how different services in your application are connected and how they interact with each other. This helps you understand the dependencies between different services and optimize their performance.
+  
+Trace Search: X-Ray allows you to search for traces based on specific criteria, such as service names, request IDs, and annotations. This makes it easy to find traces and troubleshoot issues quickly.
+  
+Overall, AWS X-Ray is a powerful tool that helps developers gain insights into the behavior and performance of their applications in a distributed environment, allowing them to optimize their application’s performance and quickly resolve any issues that arise.
+
+
+Added the X-Ray Daemon in compose file:
+
+```
+version: "3.8"
+services:
+  xray-daemon:
+    image: "amazon/aws-xray-daemon"
+    environment:
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+      AWS_REGION: "${AWS_REGION}"
+    command:
+      - "xray -o -b xray-daemon:2000"
+    ports:
+      - 2000:2000
+```
+
+Environment variables for X-Ray in our ‘docker-compose.yml’ file under backend so that it can communicate to x-ray:
+```
+  backend-flask:
+    environment:
+      FRONTEND_URL: "https://3000-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
+      BACKEND_URL: "https://4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
+      AWS_XRAY_URL: "*4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}*"
+      AWS_XRAY_DAEMON_ADDRESS: "xray-daemon:2000"
+```
+
+
+We adjusted our ‘backend-flask/services/home_activities.py’ file to add spans and attributes:
+   
 
 
 
@@ -125,6 +175,10 @@ provider.add_span_processor(processor)
 
 
 
+
+
+
+>In the code, it's like having a special tool called a "tracer" that helps you write down what happens when you play with your toys. It starts a new page in your notebook called "home-activities-mock-data" and writes down all the fun things you do while playing. It also writes down important details like when you started playing and how many toys you used. This helps you keep track of everything and understand what you did later on.
 
 
 
@@ -142,6 +196,8 @@ ports:
     port: 4567
     visibility: public
 ```
+
+
 
 
 
