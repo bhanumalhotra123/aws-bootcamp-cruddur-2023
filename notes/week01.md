@@ -4,7 +4,7 @@
 Created an openapi-3.0.yml file as a standard for defining APIs. 
 The API is providing us with mock data
 
-[openapi yml file](backend-flask/openapi-3.0.yml)
+[openapi yml file](../backend-flask/openapi-3.0.yml)
 
 
 Added the section for notifications in openapi-3.0.yml document
