@@ -98,3 +98,62 @@ import NotificationsFeedPage from './pages/NotificationsFeedPage';
   },
 ```
 > These lines define a route configuration object where the path "/notifications" is mapped to render the NotificationsFeedPage component when accessed.
+  
+  
+Then under pages, we created the pages NotificationsFeedPage.js and NotificationsFeedPage.css.
+[notificationfeedpage.js](../frontend-react-js/pages/NotificationFeedPage.js)
+[notificationfeedpage.css](../frontend-react-js/pages/NotificationFeedPage.css)
+Used the HomeFeedPage.js and  editing it to reflect the notification page:
+> This React component represents a page for displaying notifications. It fetches notification data from a backend API upon rendering and checks user authentication using cookies. It renders a desktop navigation bar, content area containing forms for adding activities and replies, and an activity feed displaying notifications. The sidebar displays user information.
+
+
+
+
+ Added DynamoDB local and Postgres local configuration in Docker-compose.yml file:
+
+
+
+# For Postgres
+
+```
+services:
+  db:
+    image: postgres:13-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - '5432:5432'
+    volumes: 
+      - db:/var/lib/postgresql/data
+```
+
+# For Dynamodb
+
+```yml
+services:
+  dynamodb-local:
+    user: root
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    image: "amazon/dynamodb-local:latest"
+    container_name: dynamodb-local
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./docker/dynamodb:/home/dynamodblocal/data"
+    working_dir: /home/dynamodblocal
+```
+-  https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
+-  We needed to add user:root to get this working.
+
+
+  
+Then at the bottom of the docker-compose.yml file, we added the rest of the Postgres code for the volumes:
+```
+volumes:
+  db:
+    driver: local
+```
+
+This wrapped up Week 1 of the bootcamp.
