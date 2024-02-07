@@ -3,9 +3,9 @@
 
 Created an openapi-3.0.yml file as a standard for defining APIs. 
 The API is providing us with mock data
-
+  
 [openapi yml file](../backend-flask/openapi-3.0.yml)
-
+  
 
 Added the section for notifications in openapi-3.0.yml document
 
@@ -27,17 +27,17 @@ Added the section for notifications in openapi-3.0.yml document
                   $ref: '#/components/schemas/Activity'
 ```
 
-
-
+  
+  
 
 To create a Flask Backend Endpoint for Notifications, added the following in app.py:
-
+  
 ```
 from services.notifications_activities import *
 ```
 > In Python, when you import a module using the asterisk * notation, it means that you are importing all the names (functions, classes, variables) defined in that module into the current namespace.
 
-  
+    
 ```py
 @app.route("/api/activities/notifications", methods=['GET'])
 def data_notifications():
@@ -45,8 +45,8 @@ def data_notifications():
   return data, 200
 ```
 >This Flask route handles GET requests to "/api/activities/notifications" by calling the run() method of the NotificationsActivities class and returning its result with a status code of 200.
-
-
+  
+  
 ```
 from datetime import datetime, timedelta, timezone
 class NotificationsActivities:
@@ -75,21 +75,21 @@ class NotificationsActivities:
     ]
     return results
 ```
-
+   
 >The run() method within the NotificationsActivities class generates dummy notification data, encapsulating each notification as a dictionary within a list, and returns this list.
 
+  
 
-
-
+  
 For frontend, to implement the notifications accessed app.js and added the following:
 
-
+  
 ```
 import NotificationsFeedPage from './pages/NotificationsFeedPage';
 ```
 > This line of code imports the NotificationsFeedPage component from the file located at './pages/NotificationsFeedPage' in the project directory.
 
-
+  
   
 ```
   {
@@ -98,19 +98,21 @@ import NotificationsFeedPage from './pages/NotificationsFeedPage';
   },
 ```
 > These lines define a route configuration object where the path "/notifications" is mapped to render the NotificationsFeedPage component when accessed.
-  
-  
+    
+    
 Then under pages, we created the pages NotificationsFeedPage.js and NotificationsFeedPage.css.
+  
 [notificationfeedpage.js](../frontend-react-js/src/pages/NotificationsFeedPage.js)
 [notificationfeedpage.css](../frontend-react-js/src/pages/NotificationsFeedPage.css)
+  
 Used the HomeFeedPage.js and  editing it to reflect the notification page:
+  
 > This React component represents a page for displaying notifications. It fetches notification data from a backend API upon rendering and checks user authentication using cookies. It renders a desktop navigation bar, content area containing forms for adding activities and replies, and an activity feed displaying notifications. The sidebar displays user information.
 
-
-
-
- Added DynamoDB local and Postgres local configuration in Docker-compose.yml file:
-
+     
+        
+Added DynamoDB local and Postgres local configuration in Docker-compose.yml file:
+  
 
 
 # For Postgres
@@ -128,9 +130,9 @@ services:
     volumes: 
       - db:/var/lib/postgresql/data
 ```
-
+  
 # For Dynamodb
-
+  
 ```yml
 services:
   dynamodb-local:
@@ -147,7 +149,7 @@ services:
 -  https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
 -  We needed to add user:root to get this working.
 
-
+  
   
 Then at the bottom of the docker-compose.yml file, we added the rest of the Postgres code for the volumes:
 ```
@@ -155,5 +157,5 @@ volumes:
   db:
     driver: local
 ```
-
+  
 This wrapped up Week 1 of the bootcamp.
