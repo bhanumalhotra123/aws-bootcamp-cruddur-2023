@@ -125,7 +125,7 @@ We adjusted our ‘backend-flask/services/home_activities.py’ file to add span
    
 
 
-```
+```py
 from datetime import datetime, timedelta, timezone
 from opentelemetry import trace
 
@@ -359,7 +359,84 @@ from aws_xray_sdk.core import xray_recorder
 
 > A segment named 'user_activities' is initiated for tracing user activities. Within this segment, a subsegment labeled 'mock-data' is started to encapsulate specific operations. Metadata related to the current timestamp and the size of a data model is added to the subsegment for contextual information during distributed tracing.
 
+
+We updated endpoints in ‘backend-flask/app.py’ as subsegments was not working :
+```
+@app.route("/api/activities/home", methods=['GET'])
+@xray_recorder.capture('activities_home')
+def data_home():
+  data = HomeActivities.run()
+  return data, 200
+
+@app.route("/api/activities/@<string:handle>", methods=['GET'])
+@xray_recorder.capture('activities_users')
+def data_handle(handle):
+  model = UserActivities.run(handle)
+  if model['errors'] is not None:
+@app.route("/api/activities/<string:activity_uuid>", methods=['GET'])
+@xray_recorder.capture('activities_show')
+def data_show_activity(activity_uuid):
+  data = ShowActivity.run(activity_uuid=activity_uuid)
+  return data, 200
+Then, we updated ‘backend-flask/services/user_activities.py’ :
+
+from aws_xray_sdk.core import xray_recorder
+class UserActivities:
+  def run(user_handle):
+    try:
+      model = {
+        'errors': None,
+        'data': None
+      }
+
+      now = datetime.now(timezone.utc).astimezone()
+      
+      if user_handle == None or len(user_handle) < 1:
+        model['errors'] = ['blank_user_handle']
+      else:
+        now = datetime.now()
+        results = [{
+          'uuid': '248959df-3079-4947-b847-9e0892d1bab4',
+          'handle':  'Andrew Brown',
+          'message': 'Cloud is fun!',
+          'created_at': (now - timedelta(days=1)).isoformat(),
+          'expires_at': (now + timedelta(days=31)).isoformat()
+        }]
+        model['data'] = results
+
+      subsegment = xray_recorder.begin_subsegment('mock-data')
+      # xray -------
+      dict = {
+        "now": now.isoformat(),
+        "results-size": len(model['data'])   
+      }    
+      subsegment.put_metadata('key', dict, 'namespace')
+      xray_recorder.end_subsegment()
+    finally:
+      # Close the segment
+      xray_recorder.end_subsegment()
+
+    return model
+```
+This at least got subsegments working, and we’re now returning data from X-Ray when querying the results.
+
 ![x-ray-user-activities](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8cc108bc-fb2e-482c-abad-6e01c37c06f2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -419,3 +496,196 @@ class HomeActivities:
 
 >This Python class HomeActivities defines a method run() to execute certain actions. Inside run(), it logs a message using a logger named logger, then creates a new span with the name "home-activites-mock-data" using a tracer. It also retrieves the current span and obtains the current datetime in the UTC timezone.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Rollbar
+Rollbar is a cloud-based error monitoring and debugging tool that helps developers identify and fix issues in their software applications. It provides real-time visibility into errors, exceptions, and crashes that occur in the application, allowing developers to quickly diagnose and fix issues before they impact users.
+  
+Rollbar integrates with various programming languages and platforms, including JavaScript, Ruby, Python, PHP, Java, and more, and can be used to monitor errors across multiple environments, including web, mobile, and desktop applications.
+
+Added instructions to requirements.txt:
+
+```
+blinker
+rollbar
+```
+>"blinker": A Python library for creating and dispatching simple events.
+"rollbar": A real-time error tracking and monitoring service for web applications.
+
+
+```
+ Rollbar --------
+import os
+import rollbar
+import rollbar.contrib.flask
+from flask import got_request_exception
+# Rollbar ------
+rollbar_access_token = os.getenv('ROLLBAR_ACCESS_TOKEN')
+@app.before_first_request
+def init_rollbar():
+    """init rollbar module"""
+    rollbar.init(
+        # access token
+        rollbar_access_token,
+        # environment name
+        'production',
+        # server root directory, makes tracebacks prettier
+        root=os.path.dirname(os.path.realpath(__file__)),
+        # flask already sets up logging
+        allow_logging_basic_config=False)
+
+    # send exceptions from `app` to rollbar, using flask's signal system.
+    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
+
+@app.route('/rollbar/test')
+def rollbar_test():
+    rollbar.report_message('Hello World!', 'warning')
+    return "Hello World!"
+
+```
+
+
+>This code snippet integrates Rollbar error tracking into a Flask application, initializing Rollbar with an access token and configuring exception reporting. It establishes a route ("/rollbar/test") to test Rollbar functionality by reporting a sample message ("Hello World!") with a warning level, ensuring proper integration and error handling.
+
+
+Added an environment variable for Rollbar to __docker-compose.yml__
+
+```
+  ROLLBAR_ACCESS_TOKEN: "${ROLLBAR_ACCESS_TOKEN}"
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+Week 2 Notes - Cloud Security – Observability – Centralized tracing for Security and Speed in AWS Cloud
+
+Current state of logging 
+On-Premises Logs
+- Infrastructure
+- Application(s)
+- Anti-virus
+- Firewall
+- Etc
+
+Cloud Logs
+- Infrastructure*** (may be challenges based on the type of compute used)
+- Application(s)***(PaaS may add additional complexity, but there should still be logs)
+- Anti-Virus
+- Firewall
+- Etc
+
+Why Logging is Poopy
+- Time consuming
+- Tons of data with no context for Why of the security events?
+- Needle in a haystack to find things
+- Monolith vs Services vs Microservices
+- Modern Applications are distributed 
+- Many more haystacks and many more needles
+- Increase Alert Fatigue for SOC Teams and Application Teams(SREs, DevOps, etc)
+
+Why Observability!
+- Decreased Alert Fatigue for Security Operations Teams
+- Visibility of end2end of Logs, metrics and tracing
+- Troubleshoot and resolve things quickly without costing too much money
+- Understand application health 
+- Accelerate collaboration between teams
+- Reduce overall operational cost
+- Increase customer satisfaction
+
+Observability – what can I do to prevent the issue from reoccurring? 
+
+Monitoring – Is my system backed up? 
+
+What is Observability in AWS? 
+
+“open-source solutions, giving you the ability to understand what is happening across your technology stack at any time. AWS observability lets you collect, correlate, aggregate, and analyze telemetry in your netowkr, infrastructure, and aplications in the cloud, hybrid, or on-premises enviornments so you can gain insights into the behavior, performance, and health of your system. These insights help you detect, investigate, and remediate problems faster; and coupled with artificial intelligence and machine learning, proactively react, predict, and prevent problems.”
+
+Observability – 3 pillars: 
+
+1. Metrics – enhance what logs are being produced
+2. Traces – being able to trace it back to the pinpoint problem causing the issue in the first place
+3. Logs – every application produces logs
+
+AWS Observability Services
+
+- AWS Cloudwatch Logs
+- AWS Cloudwatch Metrics
+- AWS Xray Traces
+
+Instrumentation – what helps you produce logs or metrics or traces
+
+AWS Services for instrumentation: AWS Cloudwatch, AWS Xray, AWS Distro for OpenTelemetry
+
+Use Cloudwatch coming from CloudTrail or coming from EC2 for specific scenarios that are meant for security
+
+Not all instrumentation agents offer all 3 of logs, metrics, and traces
+
+Security is mostly logs and metrics
+
+Building Security Metrics, Logs for Tracing:
+1. Application
+2. Threat model for known attack vectors
+3. Industry known attack patterns/techniques
+4. Identify Instrumentation Agents – e.g. SIEM tools, AWS Security HUB, SOAR tools, etc
+a. Uplifts Security Observability Dashboards
+b. Launch New Security Observability Dashboards
+
+1. Which application? 
+2. Type of application (compute, moonlight, microservices)
+3. Threat modelling session
+4. Identity Attack Vectors
+5. Map Attack Vectors to TTP in Attack MITRE Framework
+6. Identify instrumentation agents to create tracing (Cloudwatch or FireLens agent, 3rd party agents, etc)
+7. AWS services like AWS Distro for OpenTelemetry (ADOT) for metrics and traces
+8. Dashboard for Practical Attack Vectors only for that application
+9. Repeat for next application
+
+Central Observability Platform – Security
+- AWS Security Hub with Amazon EventBridge
+- Open Source Dashboards
+- SIEM (Security Incident and Event Management)
+- Event Driven Architecture with AWS Services
+
+Event Drive Security
+- Event Driven Architecture using Serverless
+- Auto Remediation with Amazon EventBridge and AWS Security Hub
+- AWS Services for Threat Detection – Amazon GuardDuty, 3rd party, etc
+```
