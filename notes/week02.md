@@ -225,7 +225,9 @@ We added instruction to our ‘gitpod.yml’ file to automatically run npm insta
 
 
 # AWS X-RAY
-
+[X-Ray](https://docs.aws.amazon.com/xray/latest/devguide/xray-daemon.html)
+[Docker compose example of X-Ray](https://github.com/marjamis/xray/blob/master/docker-compose.yml)
+  
 AWS X-Ray is a distributed tracing service that helps developers analyze and debug applications in a distributed environment. It allows you to trace requests made to your application as they travel through various AWS resources and services, helping you identify the root cause of issues and bottlenecks.
   
 With X-Ray, you can gain insights into how your application is performing and how it interacts with other AWS resources and services, such as EC2 instances, Lambda functions, API Gateway, and more. X-Ray generates a map of your application’s architecture, showing how different services are connected, and providing real-time visibility into the performance and behavior of your application.
@@ -289,6 +291,8 @@ Setup X-Ray resources. From our ‘aws’ folder, we created a ‘json’ folder
       "Version": 1
   }
 }
+
+
 ```
 >The x-ray.json file contains a sampling rule configuration for AWS X-Ray. Sampling rules define which requests and segments are recorded and sent to X-Ray for analysis.
 ```
@@ -297,7 +301,9 @@ aws xray create-group \
    --group-name "Cruddur" \
    --filter-expression "service(\"$FLASK_ADDRESS\")"
 ```
+>The code sets the Flask address dynamically using environment variables. Then, it creates an AWS X-Ray group named "Cruddur" filtering services based on the Flask address. This allows monitoring and tracing of requests within the Flask application deployed on Gitpod.
   
+
 ```
 aws xray create-sampling-rule --cli-input-json file://aws/json/xray.json
 ```
@@ -329,6 +335,13 @@ XRayMiddleware(app, xray_recorder)
 
 >  Dynamically configures the AWS X-Ray recorder for Flask, initializes the Flask app, and then manually adds the X-Ray middleware to enable distributed tracing within the application.
 
+
+![x-ray-1](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/063c0327-f80d-4e8e-bb82-a8a538efa964)
+![x-ray-2](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/4b956eb1-0926-4c4e-86a5-757dc4f83b29)
+![x-ray-3](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/7ced7363-5bc5-48c0-9696-62b1e0290ffe)
+![x-ray-4](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/521e3eb8-14aa-4d02-862c-dfde8ccb0f2c)
+
+
 This got X-Ray semi-working. We added segments and subsegments to our [user_activities.py](../backend-flask/services/user_activities.py) file:
 ```
 from aws_xray_sdk.core import xray_recorder
@@ -346,6 +359,63 @@ from aws_xray_sdk.core import xray_recorder
 
 > A segment named 'user_activities' is initiated for tracing user activities. Within this segment, a subsegment labeled 'mock-data' is started to encapsulate specific operations. Metadata related to the current timestamp and the size of a data model is added to the subsegment for contextual information during distributed tracing.
 
+![x-ray-user-activities](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8cc108bc-fb2e-482c-abad-6e01c37c06f2)
 
-   
- 
+
+
+## Cloudwatch
+'
+CloudWatch is a monitoring and observability service provided by AWS that enables you to monitor and collect metrics, logs, and events from various resources and services in the AWS cloud environment. It allows you to gain insights into the performance, utilization, and health of your AWS resources and services, and take action to keep them running smoothly.
+
+
+Added instructions to [requirements.txt](../backend-flask/requirements.txt) :
+
+```
+watchtower
+```
+
+In  [app.py](../backend-flask/app.py):
+
+
+```
+# Cloudwatch logs ----
+import watchtower
+import logging
+from time import strftime
+
+# Configuring Logger to Use CloudWatch
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
+console_handler = logging.StreamHandler()
+cw_handler = watchtower.CloudWatchLogHandler(log_group='cruddur')
+LOGGER.addHandler(console_handler)
+LOGGER.addHandler(cw_handler)
+LOGGER.info("test log")
+```
+>The code sets up a logger in Python, configured to log messages to both the console and AWS CloudWatch Logs. It uses the Watchtower library to integrate CloudWatch logging. Finally, it logs a test message using the configured logger, which will be visible in both the console and CloudWatch Logs under the specified log group "cruddur".
+
+```
+@app.after_request
+def after_request(response):
+    timestamp = strftime('[%Y-%b-%d %H:%M]')
+    LOGGER.error('%s %s %s %s %s %s', timestamp, request.remote_addr, request.method, request.scheme, request.full_path, response.status)
+    return response
+```
+
+>This Flask code snippet defines a function to execute after each request. It logs request details, including timestamp, client IP, HTTP method, scheme, and path, along with the response status, using the previously configured logger. It connects to the previous code by extending the logging setup to include request-response logging to AWS CloudWatch Logs.
+
+
+  ![CloudWatch](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/33f93b5d-757e-4063-9a2f-937c495c116b)
+
+```
+class HomeActivities:
+  def run():
+
+   logger.info("HomeActivities")
+    with tracer.start_as_current_span("home-activites-mock-data"):
+      span = trace.get_current_span()
+      now = datetime.now(timezone.utc).astimezone()  
+```
+
+>This Python class HomeActivities defines a method run() to execute certain actions. Inside run(), it logs a message using a logger named logger, then creates a new span with the name "home-activites-mock-data" using a tracer. It also retrieves the current span and obtains the current datetime in the UTC timezone.
+
