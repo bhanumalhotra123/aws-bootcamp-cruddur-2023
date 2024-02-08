@@ -27,9 +27,9 @@ So, when we say Honeycomb supports Open Telemetry, we mean that it's like saying
 It's like setting up a pipeline from our software's brain to Honeycomb's analytical engine, so we can gain insights and understand exactly what's going on under the hood.
 
 
-  ![Honeycomb](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8c5910a6-49ad-41d0-a4fa-7175e24f5588)
 
-  
+![Honeycomb Charts](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/82c33b29-a159-4aaf-82ab-07d9fc93afc3)
+![Honeycomb Queries](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8c5910a6-49ad-41d0-a4fa-7175e24f5588)
 We began by added installation instructions for Open Telemetry by adding the following files to our ‘requirements.txt’:
   
 ```
@@ -67,6 +67,8 @@ trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
 
 ```
+
+
 
 >These lines initialize tracing for Flask and Requests, and set up an exporter to send data to Honeycomb using the OpenTelemetry Protocol (OTLP). The TracerProvider and BatchSpanProcessor manage the tracing process, while get_tracer retrieves the tracer instance. This setup enables capturing and exporting telemetry data to Honeycomb for analysis and monitoring.
 
@@ -119,6 +121,108 @@ provider.add_span_processor(processor)
 
 
 
+We adjusted our ‘backend-flask/services/home_activities.py’ file to add spans and attributes:
+   
+
+
+```
+from datetime import datetime, timedelta, timezone
+from opentelemetry import trace
+
+tracer = trace.get_tracer("home.activities")
+
+class HomeActivities:
+  def run():
+
+    with tracer.start_as_current_span("home-activites-mock-data"):
+      span = trace.get_current_span()
+      now = datetime.now(timezone.utc).astimezone()      
+      span.set_attribute("app.now", now.isoformat())
+      results = [{
+        'uuid': '68f126b0-1ceb-4a33-88be-d90fa7109eee',
+        'handle':  'Andrew Brown',
+        'message': 'Cloud is very fun!',
+        'created_at': (now - timedelta(days=2)).isoformat(),
+        'expires_at': (now + timedelta(days=5)).isoformat(),
+        'likes_count': 5,
+        'replies_count': 1,
+        'reposts_count': 0,
+        'replies': [{
+          'uuid': '26e12864-1c26-5c3a-9658-97a10f8fea67',
+          'reply_to_activity_uuid': '68f126b0-1ceb-4a33-88be-d90fa7109eee',
+          'handle':  'Worf',
+          'message': 'This post has no honor!',
+          'likes_count': 0,
+          'replies_count': 0,
+          'reposts_count': 0,
+          'created_at': (now - timedelta(days=2)).isoformat()
+        }],
+      },
+      {
+        'uuid': '66e12864-8c26-4c3a-9658-95a10f8fea67',
+        'handle':  'Worf',
+        'message': 'I am out of prune juice',
+        'created_at': (now - timedelta(days=7)).isoformat(),
+        'expires_at': (now + timedelta(days=9)).isoformat(),
+        'likes': 0,
+        'replies': []
+      },
+      {
+        'uuid': '248959df-3079-4947-b847-9e0892d1bab4',
+        'handle':  'Garek',
+        'message': 'My dear doctor, I am just simple tailor',
+        'created_at': (now - timedelta(hours=1)).isoformat(),
+        'expires_at': (now + timedelta(hours=12)).isoformat(),
+        'likes': 0,
+        'replies': []
+      }
+      ]
+      span.set_attribute("app.result_length", len(results))   
+      return results                ,
+```
+
+
+
+
+
+>The OpenTelemetry instrumentation in your HomeActivities service will capture each span representing the activities within the HomeActivities.run() method.
+>These spans are then exported to your Flask application (app.py), which is configured to handle tracing data.
+>Your Flask application, being instrumented with OpenTelemetry, will receive these spans and forward them to Honeycomb via the configured exporter (OTLPSpanExporter).
+>Once the spans reach Honeycomb, they can be stored, analyzed, and visualized for monitoring and debugging purposes.
+
+
+>In the code, it's like having a special tool called a "tracer" that helps you write down what happens when you play with your toys. It starts a new page in your notebook called "home-activities-mock-data" and writes down all the fun things you do while playing. It also writes down important details like when you started playing and how many toys you used. This helps you keep track of everything and understand what you did later on.
+
+
+Configured the ports for the frontend and backend to remain open(public) by adding port information to our gitpod.yml file:
+
+```
+ports:
+  - name: frontend
+    port: 3000
+    onOpen: open-browser
+    visibility: public
+  - name: backend
+    port: 4567
+    visibility: public
+```
+
+  
+
+We added instruction to our ‘gitpod.yml’ file to automatically run npm install from our environment upon start up of the workspace:
+  
+```
+  - name: react-js
+    command: |
+      cd frontend-react-js
+      npm i-
+```
+
+
+
+
+
+
 
 # AWS X-RAY
 
@@ -165,41 +269,83 @@ Environment variables for X-Ray in our ‘docker-compose.yml’ file under backe
 ```
 
 
-We adjusted our ‘backend-flask/services/home_activities.py’ file to add spans and attributes:
-   
 
 
-
-
-
-
-
-
-
-
-
->In the code, it's like having a special tool called a "tracer" that helps you write down what happens when you play with your toys. It starts a new page in your notebook called "home-activities-mock-data" and writes down all the fun things you do while playing. It also writes down important details like when you started playing and how many toys you used. This helps you keep track of everything and understand what you did later on.
-
-
-
-
-
-Configured the ports for the frontend and backend to remain open(public) by adding port information to our gitpod.yml file:
+Setup X-Ray resources. From our ‘aws’ folder, we created a ‘json’ folder, then an ‘xray.json’ file within. We then setup our resources in the file:
 
 ```
-ports:
-  - name: frontend
-    port: 3000
-    onOpen: open-browser
-    visibility: public
-  - name: backend
-    port: 4567
-    visibility: public
+{
+  "SamplingRule": {
+      "RuleName": "Cruddur",
+      "ResourceARN": "*",
+      "Priority": 9000,
+      "FixedRate": 0.1,
+      "ReservoirSize": 5,
+      "ServiceName": "backend-flask",
+      "ServiceType": "*",
+      "Host": "*",
+      "HTTPMethod": "*",
+      "URLPath": "*",
+      "Version": 1
+  }
+}
+```
+>The x-ray.json file contains a sampling rule configuration for AWS X-Ray. Sampling rules define which requests and segments are recorded and sent to X-Ray for analysis.
+```
+FLASK_ADDRESS="https://4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
+aws xray create-group \
+   --group-name "Cruddur" \
+   --filter-expression "service(\"$FLASK_ADDRESS\")"
+```
+  
+```
+aws xray create-sampling-rule --cli-input-json file://aws/json/xray.json
+```
+  
+We call X-Ray in our ‘backend-flask/app.py’ file:
+```
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
+```
+> The code snippet imports AWS X-Ray SDK for Python, used for distributed tracing in AWS applications. It then integrates X-Ray middleware into a Flask application to automatically trace incoming requests.
+
+
+  
+We must also add instruction for it in ‘requirements.txt’ :
+```  
+aws-xray-sdk
+```
+   
+We ran ‘pip install -r requirements.txt’ to reinstall Python dependencies, and found again we needed to adjust ‘backend-flask.py’ :
+```
+  
+xray_url = os.getenv("AWS_XRAY_URL")
+xray_recorder.configure(service='backend-flask', dynamic_naming=xray_url)
+  
+app = Flask(__name__)
+  
+XRayMiddleware(app, xray_recorder) 
 ```
 
+>  Dynamically configures the AWS X-Ray recorder for Flask, initializes the Flask app, and then manually adds the X-Ray middleware to enable distributed tracing within the application.
 
+This got X-Ray semi-working. We added segments and subsegments to our [user_activities.py](../backend-flask/services/user_activities.py) file:
+```
+from aws_xray_sdk.core import xray_recorder
 
+    segment = xray_recorder.begin_segment('user_activities')
 
+    subsegment = xray_recorder.begin_subsegment('mock-data')
+    # xray -------
+    dict = {
+      "now": now.isoformat(),
+      "results-size": len(model['data'])   
+    }    
+    subsegment.put_metadata('key', dict, 'namespace')
+```
+
+> A segment named 'user_activities' is initiated for tracing user activities. Within this segment, a subsegment labeled 'mock-data' is started to encapsulate specific operations. Metadata related to the current timestamp and the size of a data model is added to the subsegment for contextual information during distributed tracing.
 
 
    
+ 
