@@ -76,15 +76,13 @@ Amplify.configure({
 - OAuth 2.0: An open standard for authorization that allows secure authorization of users' access to resources in a web application.
 - JWT Usage: The React application receives the JWT and can use it to securely access protected resources or make authenticated requests to backend APIs. The application typically includes the JWT in the authorization header of HTTP requests when accessing protected endpoints.
 - __Information Flow__: During runtime, the React application retrieves environment variables containing AWS region, Cognito user pool ID, and client ID. Amplify then utilizes this information to interact with Cognito for user authentication. When a user attempts to log in, the React application sends authentication requests to Cognito, which verifies the user's credentials. Upon successful authentication, Cognito issues JSON Web Tokens (JWTs) to the application, allowing the user access to protected resources.
-
-
-
-```
-
-```
-
-
-
+  
+  
+  
+HomeFeedPage.js
+  
+![Changes in HomePage](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/a6cc2d5a-aeac-4617-a35f-bb8789ccb70b)
+  
 This code is a React component called HomeFeedPage that renders a home feed page with various components like navigation, sidebar, and activity feed.
 It imports necessary CSS and libraries like aws-amplify for authentication.
 The checkAuth function checks if a user is authenticated using AWS Cognito, fetching user data if authenticated and setting it in the component's state.
@@ -93,133 +91,17 @@ The dataFetchedRef.current check prevents redundant authentication checks, ensur
 Overall, this component sets up authentication using AWS Cognito and renders a home feed page with relevant components.
 
 
-<div style="display: flex; flex-direction: row;">
-  <div style="flex: 1;">
-    ```javascript
-import './HomeFeedPage.css';
-import React from "react";
 
-import { Auth } from 'aws-amplify';
 
-import DesktopNavigation  from '../components/DesktopNavigation';
-import DesktopSidebar     from '../components/DesktopSidebar';
-import ActivityFeed from '../components/ActivityFeed';
-	@@ -36,16 +38,24 @@ export default function HomeFeedPage() {
-  };
+Profile.js
 
-  const checkAuth = async () => {
-    Auth.currentAuthenticatedUser({
-      // Optional, By default is false. 
-      // If set to true, this call will send a 
-      // request to Cognito to get the latest user data
-      bypassCache: false 
-    })
-    .then((user) => {
-      console.log('user',user);
-      return Auth.currentAuthenticatedUser()
-    }).then((cognito_user) => {
-        setUser({
-          display_name: cognito_user.attributes.name,
-          handle: cognito_user.attributes.preferred_username
-        })
-    })
-    .catch((err) => console.log(err));
-  };
+![Changes in Profile.js](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/fdfa2f73-61b1-4448-8a15-b55b5703852b)
   
-  React.useEffect(()=>{
-    //prevents double call
-    if (dataFetchedRef.current) return;
-    ```
-  </div>
-  <div style="flex: 1;">
-    ```javascript
-import './HomeFeedPage.css';
-import React from "react";
+>This React component, ProfileInfo, is responsible for displaying user profile information and handling authentication using AWS Amplify. Let's break it down:
+>State Management: The component uses React's useState hook to manage the popped state, which determines whether additional profile information is displayed (true) or not (false).
+>Click Handler: The click_pop function toggles the popped state when the profile information is clicked. This allows users to expand or collapse the additional information.
+>Sign Out Function: The signOut function is an asynchronous function that signs the user out using AWS Amplify's Auth.signOut() method. Upon successful sign-out, it redirects the user to the home page (/). Any errors encountered during the sign-out process are logged to the console.
 
-import DesktopNavigation  from '../components/DesktopNavigation';
-import DesktopSidebar     from '../components/DesktopSidebar';
-import ActivityFeed from '../components/ActivityFeed';
-import ActivityForm from '../components/ActivityForm';
-import ReplyForm from '../components/ReplyForm';
-
-// [TODO] Authenication
-import Cookies from 'js-cookie'
-
-export default function HomeFeedPage() {
-  const [activities, setActivities] = React.useState([]);
-  const [popped, setPopped] = React.useState(false);
-  const [poppedReply, setPoppedReply] = React.useState(false);
-  const [replyActivity, setReplyActivity] = React.useState({});
-  const [user, setUser] = React.useState(null);
-  const dataFetchedRef = React.useRef(false);
-
-  const loadData = async () => {
-    try {
-      const backend_url = `${process.env.REACT_APP_BACKEND_URL}/api/activities/home`
-      const res = await fetch(backend_url, {
-        method: "GET"
-      });
-      let resJson = await res.json();
-      if (res.status === 200) {
-        setActivities(resJson)
-      } else {
-        console.log(res)
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const checkAuth = async () => {
-    console.log('checkAuth')
-    // [TODO] Authenication
-    if (Cookies.get('user.logged_in')) {
-      setUser({
-        display_name: Cookies.get('user.name'),
-        handle: Cookies.get('user.username')
-      })
-    }
-  };
-
-  React.useEffect(()=>{
-    //prevents double call
-    if (dataFetchedRef.current) return;
-    dataFetchedRef.current = true;
-
-    loadData();
-    checkAuth();
-  }, [])
-
-  return (
-    <article>
-      <DesktopNavigation user={user} active={'home'} setPopped={setPopped} />
-      <div className='content'>
-        <ActivityForm  
-          popped={popped}
-          setPopped={setPopped} 
-          setActivities={setActivities} 
-        />
-        <ReplyForm 
-          activity={replyActivity} 
-          popped={poppedReply} 
-          setPopped={setPoppedReply} 
-          setActivities={setActivities} 
-          activities={activities} 
-        />
-        <ActivityFeed 
-          title="Home" 
-          setReplyActivity={setReplyActivity} 
-          setPopped={setPoppedReply} 
-          activities={activities} 
-        />
-      </div>
-      <DesktopSidebar user={user} />
-    </article>
-  );
-}
-    ```
-  </div>
-</div>
 
 
 
