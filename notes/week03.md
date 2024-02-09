@@ -80,6 +80,22 @@ Amplify.configure({
 
 
 ```
+
+```
+
+
+
+This code is a React component called HomeFeedPage that renders a home feed page with various components like navigation, sidebar, and activity feed.
+It imports necessary CSS and libraries like aws-amplify for authentication.
+The checkAuth function checks if a user is authenticated using AWS Cognito, fetching user data if authenticated and setting it in the component's state.
+The useEffect hook is used to trigger the authentication check when the component mounts, ensuring it runs only once.
+The dataFetchedRef.current check prevents redundant authentication checks, ensuring it only happens once.
+Overall, this component sets up authentication using AWS Cognito and renders a home feed page with relevant components.
+
+
+<div style="display: flex; flex-direction: row;">
+  <div style="flex: 1;">
+    ```javascript
 import './HomeFeedPage.css';
 import React from "react";
 
@@ -113,25 +129,98 @@ import ActivityFeed from '../components/ActivityFeed';
   React.useEffect(()=>{
     //prevents double call
     if (dataFetchedRef.current) return;
-```
+    ```
+  </div>
+  <div style="flex: 1;">
+    ```javascript
+import './HomeFeedPage.css';
+import React from "react";
 
+import DesktopNavigation  from '../components/DesktopNavigation';
+import DesktopSidebar     from '../components/DesktopSidebar';
+import ActivityFeed from '../components/ActivityFeed';
+import ActivityForm from '../components/ActivityForm';
+import ReplyForm from '../components/ReplyForm';
 
+// [TODO] Authenication
+import Cookies from 'js-cookie'
 
-This code is a React component called HomeFeedPage that renders a home feed page with various components like navigation, sidebar, and activity feed.
-It imports necessary CSS and libraries like aws-amplify for authentication.
-The checkAuth function checks if a user is authenticated using AWS Cognito, fetching user data if authenticated and setting it in the component's state.
-The useEffect hook is used to trigger the authentication check when the component mounts, ensuring it runs only once.
-The dataFetchedRef.current check prevents redundant authentication checks, ensuring it only happens once.
-Overall, this component sets up authentication using AWS Cognito and renders a home feed page with relevant components.
+export default function HomeFeedPage() {
+  const [activities, setActivities] = React.useState([]);
+  const [popped, setPopped] = React.useState(false);
+  const [poppedReply, setPoppedReply] = React.useState(false);
+  const [replyActivity, setReplyActivity] = React.useState({});
+  const [user, setUser] = React.useState(null);
+  const dataFetchedRef = React.useRef(false);
 
+  const loadData = async () => {
+    try {
+      const backend_url = `${process.env.REACT_APP_BACKEND_URL}/api/activities/home`
+      const res = await fetch(backend_url, {
+        method: "GET"
+      });
+      let resJson = await res.json();
+      if (res.status === 200) {
+        setActivities(resJson)
+      } else {
+        console.log(res)
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
+  const checkAuth = async () => {
+    console.log('checkAuth')
+    // [TODO] Authenication
+    if (Cookies.get('user.logged_in')) {
+      setUser({
+        display_name: Cookies.get('user.name'),
+        handle: Cookies.get('user.username')
+      })
+    }
+  };
 
-| Code Block 1 | Code Block 2 |
-|--------------|--------------|
-| ```python    | ```python    |
-| # Code       | # Code       |
-| print("Hello| print("World"| 
-| ```          | ```          |
+  React.useEffect(()=>{
+    //prevents double call
+    if (dataFetchedRef.current) return;
+    dataFetchedRef.current = true;
+
+    loadData();
+    checkAuth();
+  }, [])
+
+  return (
+    <article>
+      <DesktopNavigation user={user} active={'home'} setPopped={setPopped} />
+      <div className='content'>
+        <ActivityForm  
+          popped={popped}
+          setPopped={setPopped} 
+          setActivities={setActivities} 
+        />
+        <ReplyForm 
+          activity={replyActivity} 
+          popped={poppedReply} 
+          setPopped={setPoppedReply} 
+          setActivities={setActivities} 
+          activities={activities} 
+        />
+        <ActivityFeed 
+          title="Home" 
+          setReplyActivity={setReplyActivity} 
+          setPopped={setPoppedReply} 
+          activities={activities} 
+        />
+      </div>
+      <DesktopSidebar user={user} />
+    </article>
+  );
+}
+    ```
+  </div>
+</div>
+
 
 
 
