@@ -117,7 +117,7 @@ Made similar changes to other pages such as SignUpPage, DesktopSideBar.js
 ![Screenshot 2024-02-09 171229](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/99fca029-3c13-4bb8-a338-43b40dbc6ae5)
 
 In the end we created a lambda function:
-
+Cognito to trigger this Lambda function on events such as user sign-ups, account confirmations, or profile updates.
 ```
 import json
 import psycopg2
@@ -166,27 +166,10 @@ def lambda_handler(event, context):
     return event
 ```
 
-# Lambda Function for User Data Insertion
-
-This AWS Lambda function is designed to handle user sign-up or profile update events, extracting user attributes and inserting them into a PostgreSQL database.
-
-## Functionality Overview
-
-- **Event Handling**: Receives user attributes from an event triggered by user actions such as sign-up or profile update.
-- **Data Extraction**: Extracts relevant user attributes including display name, email, username, and Cognito ID from the event data.
-- **Database Interaction**: Utilizes psycopg2 to connect to a PostgreSQL database using the provided connection URL stored in environment variables.
-- **Data Insertion**: Constructs an SQL INSERT statement to insert the user data into a 'users' table within the database.
-- **Error Handling**: Catches and prints any exceptions that occur during database interaction for debugging purposes, ensuring graceful error handling.
-
-## Deployment and Usage
-
-- **Environment Variables**: Ensure that the `CONNECTION_URL` environment variable containing the PostgreSQL database connection URL is correctly configured in the AWS Lambda environment.
-- **Integration**: Integrate this Lambda function with AWS Cognito or other AWS services responsible for user authentication and management.
-- **Monitoring**: Monitor Lambda function invocations and database interactions for any errors or anomalies.
-
-## Dependencies
-
-- **psycopg2**: Python library for PostgreSQL database interaction.
-- **AWS Lambda**: Serverless compute service for running the function in response to events.
-- **AWS Cognito**: AWS service for user authentication, providing user attribute data.
+> This AWS Lambda function receives user attributes from an event triggered by a user signing up or updating their profile.
+It extracts relevant user attributes such as display name, email, username, and Cognito ID from the event data.
+Using psycopg2, it connects to a PostgreSQL database using the provided connection URL from environment variables.
+The function constructs an SQL INSERT statement to insert the user data into a 'users' table.
+It then executes the SQL statement with the user data as parameters, committing the transaction.
+Any exceptions that occur during this process are caught and printed for debugging purposes, ensuring graceful handling of errors.
 
