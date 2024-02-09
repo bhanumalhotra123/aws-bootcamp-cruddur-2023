@@ -126,27 +126,12 @@ Overall, this component sets up authentication using AWS Cognito and renders a h
 
 
 
-<table>
-  <tr>
-    <td>
-
-```python
-# Code block 1
-print("Hello from code block 1")
-css
-Copy code
-</td>
-<td>
-python
-Copy code
-# Code block 2
-print("Hello from code block 2")
-bash
-Copy code
-</td>
-  </tr>
-</table>
-```
+| Code Block 1 | Code Block 2 |
+|--------------|--------------|
+| ```python    | ```python    |
+| # Code       | # Code       |
+| print("Hello| print("World"| 
+| ```          | ```          |
 
 
 
