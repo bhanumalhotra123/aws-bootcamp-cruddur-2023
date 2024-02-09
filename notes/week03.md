@@ -116,4 +116,77 @@ Made similar changes to other pages such as SignUpPage, DesktopSideBar.js
 ![Screenshot 2024-02-09 171150](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/f4cdc36c-4c7d-4f15-8b7b-ddea31c44f4e)
 ![Screenshot 2024-02-09 171229](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/99fca029-3c13-4bb8-a338-43b40dbc6ae5)
 
-In the end we wrote a Cognito
+In the end we created a lambda function:
+
+```
+import json
+import psycopg2
+import os
+
+def lambda_handler(event, context):
+    user = event['request']['userAttributes']
+    print('userAttributes')
+    print(user)
+
+    user_display_name  = user['name']
+    user_email         = user['email']
+    user_handle        = user['preferred_username']
+    user_cognito_id    = user['sub']
+    try:
+      print('entered-try')
+      sql = f"""
+         INSERT INTO public.users (
+          display_name, 
+          email,
+          handle, 
+          cognito_user_id
+          ) 
+        VALUES(%s,%s,%s,%s)
+      """
+      print('SQL Statement ----')
+      print(sql)
+      conn = psycopg2.connect(os.getenv('CONNECTION_URL'))
+      cur = conn.cursor()
+      params = [
+        user_display_name,
+        user_email,
+        user_handle,
+        user_cognito_id
+      ]
+      cur.execute(sql,*params)
+      conn.commit() 
+
+    except (Exception, psycopg2.DatabaseError) as error:
+      print(error)
+    finally:
+      if conn is not None:
+          cur.close()
+          conn.close()
+          print('Database connection closed.')
+    return event
+```
+
+# Lambda Function for User Data Insertion
+
+This AWS Lambda function is designed to handle user sign-up or profile update events, extracting user attributes and inserting them into a PostgreSQL database.
+
+## Functionality Overview
+
+- **Event Handling**: Receives user attributes from an event triggered by user actions such as sign-up or profile update.
+- **Data Extraction**: Extracts relevant user attributes including display name, email, username, and Cognito ID from the event data.
+- **Database Interaction**: Utilizes psycopg2 to connect to a PostgreSQL database using the provided connection URL stored in environment variables.
+- **Data Insertion**: Constructs an SQL INSERT statement to insert the user data into a 'users' table within the database.
+- **Error Handling**: Catches and prints any exceptions that occur during database interaction for debugging purposes, ensuring graceful error handling.
+
+## Deployment and Usage
+
+- **Environment Variables**: Ensure that the `CONNECTION_URL` environment variable containing the PostgreSQL database connection URL is correctly configured in the AWS Lambda environment.
+- **Integration**: Integrate this Lambda function with AWS Cognito or other AWS services responsible for user authentication and management.
+- **Monitoring**: Monitor Lambda function invocations and database interactions for any errors or anomalies.
+
+## Dependencies
+
+- **psycopg2**: Python library for PostgreSQL database interaction.
+- **AWS Lambda**: Serverless compute service for running the function in response to events.
+- **AWS Cognito**: AWS service for user authentication, providing user attribute data.
+
