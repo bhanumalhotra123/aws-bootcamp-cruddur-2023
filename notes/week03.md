@@ -89,20 +89,31 @@ The checkAuth function checks if a user is authenticated using AWS Cognito, fetc
 The useEffect hook is used to trigger the authentication check when the component mounts, ensuring it runs only once.
 The dataFetchedRef.current check prevents redundant authentication checks, ensuring it only happens once.
 Overall, this component sets up authentication using AWS Cognito and renders a home feed page with relevant components.
-
-
-
-
+  
+  
 Profile.js
-
+  
 ![Changes in Profile.js](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/fdfa2f73-61b1-4448-8a15-b55b5703852b)
   
->This React component, ProfileInfo, is responsible for displaying user profile information and handling authentication using AWS Amplify. Let's break it down:
->State Management: The component uses React's useState hook to manage the popped state, which determines whether additional profile information is displayed (true) or not (false).
->Click Handler: The click_pop function toggles the popped state when the profile information is clicked. This allows users to expand or collapse the additional information.
->Sign Out Function: The signOut function is an asynchronous function that signs the user out using AWS Amplify's Auth.signOut() method. Upon successful sign-out, it redirects the user to the home page (/). Any errors encountered during the sign-out process are logged to the console.
+This React component, ProfileInfo, is responsible for displaying user profile information and handling authentication using AWS Amplify. Let's break it down:
+State Management: The component uses React's useState hook to manage the popped state, which determines whether additional profile information is displayed (true) or not (false).
+Click Handler: The click_pop function toggles the popped state when the profile information is clicked. This allows users to expand or collapse the additional information.
+Sign Out Function: The signOut function is an asynchronous function that signs the user out using AWS Amplify's Auth.signOut() method. Upon successful sign-out, it redirects the user to the home page (/). Any errors encountered during the sign-out process are logged to the console.
+  
+  
+SignInPages.js
+![Changes in SignInPage,js](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/1793c442-1252-4e2f-b1b2-1a7f9e1ab150)
+  
+The code has shifted from using Cookies for authentication to AWS Amplify's Auth module.
+Previously, the user's email and password were checked against stored Cookies for authentication.
+Now, the onsubmit function uses Auth.signIn from AWS Amplify, which communicates with AWS Cognito for authentication.
+Upon successful sign-in, the user's JWT token is stored in the local storage for future authenticated requests.
+If the user is not confirmed (e.g., via email verification), they are redirected to a confirmation page.
+Any authentication errors are caught and displayed to the user via the setErrors function.
+  
 
+Made similar changes to other pages such as SignUpPage, DesktopSideBar.js 
+![Screenshot 2024-02-09 171150](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/f4cdc36c-4c7d-4f15-8b7b-ddea31c44f4e)
+![Screenshot 2024-02-09 171229](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/99fca029-3c13-4bb8-a338-43b40dbc6ae5)
 
-
-
-
+In the end we wrote a Cognito
