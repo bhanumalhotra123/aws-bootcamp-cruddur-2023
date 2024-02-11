@@ -34,6 +34,9 @@ tasks:
       sudo dpkg -i session-manager-plugin.deb
       cd $THEIA_WORKSPACE_ROOT
       cd backend-flask
+  - name: cdk 
+    before: |
+      npm install aws-cdk-lib -g
 vscode:
 
   extensions:

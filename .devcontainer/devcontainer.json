@@ -1,41 +1,51 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
 {
-	"name": "cruddur configuration",
-	// The optional 'workspaceFolder' property is the path VS Code should open by default when
-	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
-	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-	"features": {
-		"ghcr.io/devcontainers/features/aws-cli:1": {}
-	},
-	"remoteEnv": {
-        "AWS_CLI_AUTO_PROMPT": "on-partial",
-
+    "name": "cruddur configuration",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "features": {
+        "ghcr.io/devcontainers/features/aws-cli:1": {}
     },
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"ms-azuretools.vscode-docker",
-				"ms-python.python"
-				
-			],
-			"settings": {
-				"workbench.colorTheme": "Default Dark+"
-			}
-			
-			
-		}
-	}
-
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Configure tool-specific properties.
-	// "customizations": {},
-
-	// Uncomment to connect as an existing user other than the container default. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "devcontainer"
+    "remoteEnv": {
+        "AWS_CLI_AUTO_PROMPT": "on-partial"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-azuretools.vscode-docker",
+                "ms-python.python"
+            ],
+            "ports": [
+                { "name": "frontend", "port": 3000 },
+                { "name": "backend", "port": 4567 },
+                { "name": "xray-daemon", "port": 2000 }
+            ],
+            "postCreateCommand": "cd /workspace && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg && echo 'deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main' | sudo tee  /etc/apt/sources.list.d/pgdg.list && sudo apt update && sudo apt install -y postgresql-client-13 libpq-dev && export GITPOD_IP=$(curl ifconfig.me) && source  $CODESPACE_ROOT/bin/rds/update-sg-rule && cd /workspace && curl 'https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb' -o 'session-manager-plugin.deb' && sudo dpkg -i session-manager-plugin.deb && npm install aws-cdk-lib -g",
+            "runArgs": ["--privileged"],
+            "tasks": [
+                {
+                    "name": "aws-cli",
+                    "command": "cd /workspace && curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip && unzip awscliv2.zip && sudo ./aws/install"
+                },
+                {
+                    "name": "react-js",
+                    "command": "source  $CODESPACE_ROOT/bin/frontend/generate-env && cd frontend-react-js && npm i"
+                },
+                {
+                    "name": "flask",
+                    "command": "source  $CODESPACE_ROOT/bin/backend/generate-env && cd backend-flask && pip install -r requirements.txt"
+                },
+                {
+                    "name": "fargate",
+                    "command": "cd /workspace && curl 'https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb' -o 'session-manager-plugin.deb' && sudo dpkg -i session-manager-plugin.deb && cd $CODESPACE_ROOT/backend-flask"
+                },
+                {
+                    "name": "cdk",
+                    "command": "npm install aws-cdk-lib -g"
+                },
+                {
+                    "name": "postgres",
+                    "command": "sudo apt update && sudo apt install -y postgresql-client-13 libpq-dev && export GITPOD_IP=$(curl ifconfig.me) && source  $CODESPACE_ROOT/bin/rds/update-sg-rule"
+                }
+            ]
+        }
+    }
 }
