@@ -4,6 +4,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import * as dotenv from 'dotenv';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications'
+import * as iam from 'aws-cdk-lib/aws-iam'
 dotenv.config();
 
 export class ThumbingServerlessCdkStack extends cdk.Stack {
@@ -23,6 +24,9 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     const lambda = this.createLambda(functionPath, bucketName, folderInput, folderOutput);
 
     this.createS3NotifyToLambda(folderInput, lambda, bucket);
+    const s3ReadWritePolicy = this.createPolicyBucketAccess(bucket.bucketArn)
+    lambda.addToRolePolicy(s3ReadWritePolicy);
+
 
 
     console.log('bucketName',bucketName)
@@ -68,9 +72,22 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     const destination = new s3n.LambdaDestination(lambda);
     bucket.addEventNotification(
       s3.EventType.OBJECT_CREATED_PUT,
-      destination//,
-      //{prefix: prefix} // folder to contain the original images
+      destination,
+      {prefix: 'avatars/orignal'}
+      
     )
+  }
+  createPolicyBucketAccess(bucketArn: string){
+    const s3ReadWritePolicy = new iam.PolicyStatement({
+      actions: [
+        's3:GetObject',
+        's3:PutObject',
+      ],
+      resources: [
+        `${bucketArn}/*`,
+      ]
+    });
+    return s3ReadWritePolicy;
   }
 
 };

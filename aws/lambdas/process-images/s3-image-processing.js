@@ -27,18 +27,18 @@ async function getOriginalImage(client,srcBucket,srcKey){
 async function processImage(image,width,height){
   const processedImage = await sharp(image)
     .resize(width, height)
-    .png()
+    .jpeg()
     .toBuffer();
   return processedImage;
 }
 
-async function uploadProcessedImage(dstBucket,dstKey,image){
+async function uploadProcessedImage(client,dstBucket,dstKey,image){
   console.log('upload==')
   const params = {
     Bucket: dstBucket,
     Key: dstKey,
     Body: image,
-    ContentType: 'image/png'
+    ContentType: 'image/jpeg'
   };
   console.log('params',params)
   const command = new PutObjectCommand(params);
