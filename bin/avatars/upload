@@ -4,6 +4,6 @@ ABS_PATH=$(readlink -f "$0")
 SERVERLESS_PATH=$(dirname $ABS_PATH)
 DATA_PATH="$SERVERLESS_PATH/files/rick.jpg"
 
-aws s3 cp "$DATA_PATH" "s3://assets.$DOMAIN_NAME/avatars/orignal/"
+aws s3 cp "$DATA_PATH" "s3://cruddur-uploaded-avatar/rick.jpg"
 
 

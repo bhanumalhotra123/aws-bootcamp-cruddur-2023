@@ -1,5 +1,5 @@
 #! /usr/bin/bash
 
 
-aws s3 rm  "s3://assets.$DOMAIN_NAME/avatars/orignal/rick.jpg"
+aws s3 rm  "s3://cruddur-uploaded-avatar/avatars/orignal/rick.jpg"
 aws s3 rm "s3://assets.$DOMAIN_NAME/avatars/processed/rick.jpg"
