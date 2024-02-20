@@ -4,7 +4,6 @@ Week 8 was all about serverless image processing.
    
 Guest -  
 Kristi Perreault, an AWS serverless hero. Kristi is a Principal Software Engineer at Liberty Mutual Insurance, focusing on serverless enablement and development for the last several years. 
-She said Liberty Mutual has gone all in on the AWS CDK space.
   
 CDK, or Cloud Development Kit, is an IaaC tool. Where in CloudFormation you would define your infrastructure in .json or .yml, in CDK you could define your infrastructure in TypeScript, JavaScript, Python, Java, C#/. Net, or Go. 
 There’s a couple different versions of CDK, we will be using version 2. If we’ve never used CDK before, that’s fine, you don’t need to know about version 1, there were import and packaging changes. Version 2 is easier to use.
@@ -102,15 +101,18 @@ createBucket(bucketName: string){
 }
 ```
   
-The id we're setting is __ThumbingBucket__ . We want to give the function a few more properties or props to make sure that it interacts with our other objects and has a name for us to identify it. 
-We do this with {} brackets. One of the properties we add is a removalPolicy, which is an IAM policy.
+- The id we're setting is __ThumbingBucket__ . We want to give the function a few more properties or props to make sure that it interacts with our other objects 
+  and has a name for us to identify it. 
+  We do this with {} brackets. One of the properties we add is a removalPolicy, which is an IAM policy.
 
 
-In statically-typed languages, including Go, TypeScript, Java, C#, Swift, and others, you typically need to explicitly declare the return type of a function. 
-This explicit declaration helps ensure type safety and allows the compiler to catch type-related errors during compilation.
+- In statically-typed languages, including Go, TypeScript, Java, C#, Swift, and others, you typically need to explicitly declare the return type of a function. 
+  This explicit declaration helps ensure type safety and allows the compiler to catch type-related errors during compilation.
 
-In the context of the AWS CDK (Cloud Development Kit) for TypeScript, s3.IBucket is a type definition representing an interface or class that describes an S3 bucket. 
-When you see s3.IBucket as a return definition in TypeScript, it means that the function returns an object that implements the IBucket interface, which represents an Amazon S3 bucket.
+- In the context of the AWS CDK (Cloud Development Kit) for TypeScript, s3.IBucket is a type definition representing an interface or class that describes an S3 
+  bucket. 
+- When you see s3.IBucket as a return definition in TypeScript, it means that the function returns an object that implements the IBucket interface, which 
+  represents an Amazon S3 bucket.
 
 ```
 createBucket(bucketName: string): s3.IBucket {
@@ -192,29 +194,177 @@ Although the template is output in our terminal as .yml, within our thumbing-ser
 Bootstraping
 [Bootstraping doc](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
 
->Preparation: Bootstrapping prepares your AWS environment for deploying AWS CDK applications. It creates the necessary infrastructure resources that AWS CDK relies on, such as an S3 bucket for storing assets and an IAM role for executing CloudFormation stacks.
->Dependency: AWS CDK requires certain resources to be available in your AWS account before you can deploy your application. For example, it needs an S3 bucket to store assets like Lambda code or Docker images and an IAM role with appropriate permissions to deploy CloudFormation stacks.
->Convenience: Bootstrapping before deployment streamlines the deployment process. Once the AWS environment is bootstrapped, you can deploy your AWS CDK applications without worrying about setting up infrastructure resources manually.
+> Preparation: Bootstrapping prepares your AWS environment for deploying AWS CDK applications. It creates the necessary infrastructure resources that AWS CDK relies on, such as an S3 bucket for storing assets and an IAM role for executing CloudFormation stacks.
+> Dependency: AWS CDK requires certain resources to be available in your AWS account before you can deploy your application. For example, it needs an S3 bucket to store assets like Lambda code or Docker images and an IAM role with appropriate permissions to deploy CloudFormation stacks.
+> Convenience: Bootstrapping before deployment streamlines the deployment process. Once the AWS environment is bootstrapped, you can deploy your AWS CDK applications without worrying about setting up infrastructure resources manually.
   
   
 We only have to bootstrap once per AWS account, or per region, if you’re wanting multiple regions. Moving to our terminal, we perform a bootstrap.
-  
+    
   
 ```
 cdk bootstrap "aws://<AWSACCOUNTNUMBER>/<AWSREGION>
 ```
-![Screenshot 2024-02-11 130844](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/3cf8bb6d-0bbe-4f2e-be38-73cb312c65bb)
   
+![Bootstrap Output](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/3cf8bb6d-0bbe-4f2e-be38-73cb312c65bb)
   
+    
 > Deployment involves synthesizing the infrastructure code into a CloudFormation template, while provisioning involves creating and configuring the actual AWS resources based on that template.
-  
+    
   
 ![cdkToolkit](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8f098c96-c140-4a58-8433-252b600749e2)
-
+  
 ```
 cdk deploy
 ```
 
+CLI output of cdk deploy
 ![cloudformation stack after deploy](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/60b23a39-f7f5-4e2b-93f4-a6d6a0f2b4a3)
 
+    
+cdk deploy creates stack in cloudformation  
+![cloudformation stack](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/e4f2794f-a8c5-4577-9563-c76d6607bf52)
+  
+S3 Bucket Formed
+![s3 bucket](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/0deac8bb-e117-4223-a386-23087ea51d86)
+  
+    
+We now move back over to our workspace and begin with our Lambda function. We first import lambda to our thumbing-serverless-cdk-stack.ts file.
+  
+```
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+```
+    
+Then we create a Lambda function to return a Lambda function.
+  
+```
+createLambda(): lambda.IFunction {
+  const lambdaFunction = new lambda.Function(this, 'ThumbLambda', {
+    runtime: lambda.Runtime.NODEJS_18_X,
+    handler: 'index.handler',
+    code: lambda.Code.fromAsset(functionPath)
+  });
+```
 
+  
+__this__ is the Construct object that the Lambda function will be a part of. ThumbLamdba is the name of the function in the CloudFormation stack. The runtime is the runtime of our environment. In this instance, we chose Node.js 18.x. The handler is the name of the handler function that will be invoked when the Lambda function is triggered. The code is the source code of our Lambda function. We haven't defined a variable for this yet, so we enter a placeholder of functionPath for the time being.
+  
+When the handler is set to "index.handler," it means that the Lambda function will look for a file named "index.js" (or whatever file extension is appropriate for the chosen runtime, like "index.ts" for TypeScript) and will execute the function named "handler" within that file when it's triggered. So, in this case, the Lambda function will trigger the code inside the "handler" function in the "index.js" file.  
+
+  
+We now define that __lambda__ function.
+  
+```
+const functionPath: string = process.env.THUMBING_FUNCTION_PATH as string;
+```
+  
+Now we have to pass this into our createLambda function, then return the lambdaFunction.
+
+```  
+createLambda(functionPath: string): lambda.IFunction {
+  const lambdaFunction = new lambda.Function(this, 'ThumbLambda', {
+    runtime: lambda.Runtime.NODEJS_18_X,
+    handler: 'index.handler',
+    code: lambda.Code.fromAsset(functionPath)
+  });
+  return lambdaFunction;
+```
+  
+Our bucket is there, but not our lambda. We need to define the lambda.
+  
+```
+const lambda = this.createLambda(functionPath);
+```
+  
+![ERROR because environment variables not being set](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/bd72b047-5bbc-4eeb-aa31-b8cbd3387069)
+  
+We haven’t defined our environment variables yet where we’re using bucketName and functionPath as strings. To fix this, we create a new .env file in our thumbing-serverless-cdk directory. In the .env file, we begin defining our env vars.
+  
+```
+THUMBING_BUCKET_NAME="assets.gooddesignsolutions.in"
+THUMBING_FUNCTION_PATH="/workspaces/aws-bootcamp-cruddur-2023/aws/lambdas/process-images"
+```
+  
+Later, we will put these variables elsewhere once the Lambda is created. We again try to cdk synth but this time we get a ERR_INVALID_ARG_TYPE error. We come to find out after trying to console.log(functionPath) that it came back undefined. We still need to load our environment variables from the .env file we created. In our code we do this:
+  
+// Load env variables
+```
+const dotenv = require('dotenv')
+dotenv.config();
+
+```
+  
+Again we cdk synth and again we get a new error:
+We need to load the module into our environment for dotenv.
+   
+```
+npm i dotenv
+```
+  
+We alter how we’re loading our environmental variables by commenting out a line.
+  
+// Load env variables
+//const dotenv = require('dotenv')
+```
+dotenv.config();
+```
+We again cdk synth. This time it completes successfully.  
+  
+![cdk synth lambda function](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/35df0918-eed2-4bc8-b1b9-133d431318f0)  
+
+
+We continue on, now defining a few environment variables for our Lambda function.
+
+```
+createLambda(functionPath: string, bucketName: string, folderInput: string, folderOutput: string): lambda.IFunction {
+  const lambdaFunction = new lambda.Function(this, 'ThumbLambda', {
+    runtime: lambda.Runtime.NODEJS_18_X,
+    handler: 'index.handler',
+    code: lambda.Code.fromAsset(functionPath),
+    environment: {
+      DEST_BUCKET_NAME: bucketName,
+      FOLDER_INPUT: folderInput,
+      FOLDER_OUTPUT: folderOutput,
+      PROCESS_WIDTH: '512',
+      PROCESS_HEIGHT: '512'
+    }
+  });
+  return lambdaFunction;
+```
+  
+Next we must define the variables we passed, as we have not defined them yet.
+   
+ ```
+const bucketName: string = process.env.THUMBING_BUCKET_NAME as string;
+const functionPath: string = process.env.THUMBING_FUNCTION_PATH as string;
+const folderInput: string = process.env.THUMBING_S3_FOLDER_INPUT as string;
+const folderOutput: string = process.env.THUMBING_S3_FOLDER_OUTPUT as string;
+
+const bucket = this.createdBucket(bucketName);
+const lambda = this.createLambda(functionPath, bucketname, folderInput, folderOutput);
+```
+
+
+Then, we have to add the env vars to our .env file.
+
+```
+THUMBING_BUCKET_NAME="assets.gooddesignsolutions.in"
+THUMBING_S3_FOLDER_INPUT="avatars/orignal"
+THUMBING_S3_FOLDER_OUTPUT="avatars/processed"
+THUMBING_WEBHOOK_URL="api.gooddesignsolutions.in/webhooks/avatars"
+THUMBING_TOPIC_NAME="cruddur-assets"
+THUMBING_FUNCTION_PATH="/workspaces/aws-bootcamp-cruddur-2023/aws/lambdas/process-images"
+```
+
+
+    
+Add the install of CDK to our .gitpod.yml file. We navigate to our .gitpod.yml file and add the installation.
+  
+```
+  - name: cdk
+    before: |
+      npm install aws-cdk -g
+```
+    
+
+![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/0401a281-8fb9-4e6d-a06c-c83097c4eb5b)
