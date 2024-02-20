@@ -368,3 +368,35 @@ Add the install of CDK to our .gitpod.yml file. We navigate to our .gitpod.yml f
     
 
 ![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/0401a281-8fb9-4e6d-a06c-c83097c4eb5b)
+
+
+
+
+MISSING PARTS HERE ----------------------------
+
+
+WILL ADD LATER -------------------------------
+
+MOST OF STUFF HAS BEEN UNDERSTOOD AND HAVE SCREENSHOTS-----------------
+
+LETME GO AHEAD FOR NOW AND FOCUS ON IMPLEMTATION PART WHICH I AM FINDING DIFFICULT--------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
