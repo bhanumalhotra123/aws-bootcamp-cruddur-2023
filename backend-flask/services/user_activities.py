@@ -1,23 +1,19 @@
-#from aws_xray_sdk.core import xray_recorder
 from lib.db import db
-
+#from aws_xray_sdk.core import xray_recorder
 class UserActivities:
   def run(user_handle):
-    try:
-      model = {
-        'errors': None,
-        'data': None
-      }
-      
-      if user_handle == None or len(user_handle) < 1:
-        model['errors'] = ['blank_user_handle']
-      else:
-    # Create an SQL template for querying home activities
-        sql = db.template('users', 'show')    
-    # Query the database and retrieve results as an array of JSON
-        results = db.query_array_object(sql)
-        model['data'] = results
-
+    #try:
+    model = {
+      'errors': None,
+      'data': None
+    }
+    if user_handle == None or len(user_handle) < 1:
+      model['errors'] = ['blank_user_handle']
+    else:
+      print("else:")
+      sql = db.template('users','show')
+      results = db.query_object_json(sql,{'handle': user_handle})
+      model['data'] = results
       #subsegment = xray_recorder.begin_subsegment('mock-data')
       ## xray ---
       #dict = {
@@ -26,7 +22,7 @@ class UserActivities:
       #}
       #subsegment.put_metadata('key', dict, 'namespace')
       #xray_recorder.end_subsegment()
-    finally:  
+    #finally:  
     ##  # Close the segment
     #  xray_recorder.end_subsegment()
-      return model
+    return model
