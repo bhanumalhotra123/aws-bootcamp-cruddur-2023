@@ -17,6 +17,7 @@ RUN pip3 install -r requirements.txt
 # second period . /backend-flask (inside container)
 COPY . .
 
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE ${PORT}
 
