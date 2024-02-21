@@ -27,11 +27,11 @@
                 },
                 {
                     "name": "react-js",
-                    "command": "$CODESPACE_ROOT/bin/frontend/generate-env && cd frontend-react-js && npm i"
+                    "command": "frontend-react-js && npm i"
                 },
                 {
                     "name": "flask",
-                    "command": "$CODESPACE_ROOT/bin/backend/generate-env && cd backend-flask && pip install -r requirements.txt"
+                    "command": "cd backend-flask && pip install -r requirements.txt"
                 },
                 {
                     "name": "fargate",
@@ -46,10 +46,6 @@
                 {
                     "name": "postgres",
                     "command": "sudo apt update && sudo apt install -y postgresql-client-13 libpq-dev && export GITPOD_IP=$(curl ifconfig.me) && source  $CODESPACE_ROOT/bin/rds/update-sg-rule"
-                },
-                {
-                    "name": "ecr",
-                    "command": "$CODESPACE_ROOT/bin/ecr/login"
                 }
             ]
         }
