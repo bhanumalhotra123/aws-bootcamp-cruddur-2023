@@ -10,6 +10,7 @@ printf "${CYAN}== ${LABEL}${NO_COLOR}\n"
 ABS_PATH=$(readlink -f "$0")
 BIN_PATH=$(dirname $ABS_PATH)
 
-source "$BIN_DIR/ecr/login"
-source "$BIN_DIR/backend/generate-env"
-source "$BIN_DIR/frontend/generate-env"
+
+
+source "$BIN_PATH/backend/generate-env"
+source "$BIN_PATH/frontend/generate-env"

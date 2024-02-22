@@ -63,9 +63,10 @@ class Db:
     print(sql, params)
 
   # Method to execute a SQL statement with commit and returning functionality
-  def query_commit(self, sql, params={}):
+  def query_commit(self, sql, params={}, verbose=True):
+    if verbose:
     # Print the SQL statement with a header indicating the type
-    self.print_sql('commit with returning', sql, params)
+      self.print_sql('commit with returning', sql, params)
 
     # Check if the SQL statement contains the keyword RETURNING
     pattern = r"\bRETURNING\b"
@@ -90,10 +91,11 @@ class Db:
       # Handle exceptions related to psycopg errors and print details
       self.print_sql_err(err)
 
-  # Method to execute a SQL statement and return a single JSON object
-  def query_array_json(self, sql, params={}):
+
+  def query_array_json(self, sql, params={}, verbose=True):
     # Print the SQL statement with a header indicating the type
-    self.print_sql('array', sql, params)
+    if verbose:
+      self.print_sql('array', sql, params)
 
     # Wrap the SQL statement to return an array of JSON objects
     wrapped_sql = self.query_wrap_array(sql)
@@ -109,11 +111,12 @@ class Db:
         return json[0]
 
   # Method to execute a SQL statement and return a single JSON object
-  def query_object_json(self, sql, params={}):
+  def query_object_json(self, sql, params={}, verbose=True):
+    if verbose:
     # Print the SQL statement with a header indicating the type
-    self.print_sql('json', sql, params)
+      self.print_sql('json', sql, params)
     # Print the SQL parameters
-    self.print_params(params)
+      self.print_params(params)
 
     # Wrap the SQL statement to return a single JSON object
     wrapped_sql = self.query_wrap_object(sql)
@@ -133,8 +136,9 @@ class Db:
           # Return the fetched JSON object
           return json[0]
 
-  def query_value(self,sql,params={}):
-    self.print_sql('value',sql,params)
+  def query_value(self,sql,params={}, verbose=True):
+    if verbose:
+      self.print_sql('value',sql,params)
     with self.pool.connection() as conn:
       with conn.cursor() as cur:
         cur.execute(sql,params)

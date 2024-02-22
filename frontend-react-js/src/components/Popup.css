@@ -1,0 +1,36 @@
+/* This block of code defines the style for a popup form */
+.popup_form_wrap {
+    z-index: 100; /* This determines the stacking order of elements on the webpage */
+    position: fixed; /* This means the popup form stays in the same place even if the user scrolls */
+    height: 100%; /* The popup form takes up the entire height of the webpage */
+    width: 100%; /* The popup form takes up the entire width of the webpage */
+    top: 0; /* The popup form starts from the top of the webpage */
+    left: 0; /* The popup form starts from the left of the webpage */
+    display: flex; /* This makes the content of the popup form flexibly arranged */
+    flex-direction: column; /* This arranges the content vertically in a column */
+    justify-content: flex-start; /* This aligns the content at the top of the popup form */
+    align-items: center; /* This centers the content horizontally in the popup form */
+    padding-top: 48px; /* This adds space at the top of the popup form */
+    background: rgba(255,255,255,0.1); /* This sets the background color of the popup form with some transparency */
+  }
+  
+  .popup_form {
+    background: #000; /* This sets the background color of the actual form inside the popup */
+    box-shadow: 0px 0px 6px rgba(190, 9, 190, 0.6); /* This adds a shadow effect around the popup form */
+    border-radius: 16px; /* This rounds the corners of the popup form */
+    width: 600px; /* This sets the width of the popup form */
+  }
+  
+  .popup_form .popup_heading {
+    display: flex; /* This makes the heading of the form flexibly arranged */
+    flex-direction: row; /* This arranges the heading content horizontally in a row */
+    border-bottom: solid 1px rgba(255,255,255,0.4); /* This adds a border line at the bottom of the heading */
+    padding: 16px; /* This adds space around the heading content */
+  }
+  
+  .popup_form .popup_heading .popup_title{
+    flex-grow: 1; /* This makes the title of the popup form take up all the available space */
+    color: rgb(255,255,255); /* This sets the color of the title text to white */
+    font-size: 18px; /* This sets the font size of the title text */
+  }
+  

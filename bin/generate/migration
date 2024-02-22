@@ -1,0 +1,65 @@
+
+#!/usr/bin/env python3
+import time  # Import the time module for timestamp generation
+import os    # Import the os module for file and directory operations
+import sys   # Import the sys module for command-line arguments
+
+# Check if the correct number of command-line arguments is provided
+if len(sys.argv) == 2:
+    name = sys.argv[1]  # Assign the provided name from command-line argument
+else:
+    # If incorrect number of arguments, print usage message and exit
+    print("pass a filename: eg. ./bin/generate/migration add_bio_coloumn")
+    exit(0)
+
+# Generate a timestamp to make each filename unique
+timestamp = str(time.time()).replace(".", "")
+
+# Construct the filename by combining timestamp and provided name
+filename = f"{timestamp}_{name}.py"
+
+# Format the class name based on the provided name
+klass = name.replace('_', ' ').title().replace(' ', '')
+
+# Generate content for the migration file
+file_content = f"""
+class {klass}Migration:
+  def migrate_sql():
+    # Placeholder for SQL statements to migrate the database
+    data = \"\"\"
+    \"\"\"
+    return data
+
+  def rollback_sql():
+    # Placeholder for SQL statements to rollback changes in the database
+    data = \"\"\"
+    \"\"\"
+    return data
+
+  def migrate():
+    # Executes the SQL migration queries
+    db.query_commit({klass}Migration.migrate_sql(),{{
+    }})
+
+  def rollback():
+    # Executes the SQL rollback queries
+    db.query_commit({klass}Migration.rollback_sql(),{{
+    }})
+
+migration = AddBioColumnMigration
+"""
+# Remove leading and trailing newline characters from the content
+file_content = file_content.lstrip('\n').rstrip('\n')
+
+# Get the current directory path
+current_path = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the absolute file path for the migration file
+file_path = os.path.abspath(os.path.join(current_path, '..', '..', 'backend-flask', 'db', 'migrations', filename))
+
+# Print the absolute file path to verify
+print(file_path)
+
+# Write the generated file content to the specified file path
+with open(file_path, 'w') as f:
+    f.write(file_content)
