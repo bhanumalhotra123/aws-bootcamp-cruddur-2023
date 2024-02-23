@@ -1,0 +1,8 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# gem "rails"
+gem 'ox'
+gem 'aws-sdk-s3'
+     #"The ox gem is a lightweight XML parser and serializer for Ruby, optimized for speed and memory efficiency."

@@ -5,7 +5,7 @@ export async function getAccessToken(){
   Auth.currentSession()
   .then((cognito_user_session) => {
     const access_token = cognito_user_session.accessToken.jwtToken
-    localStorage.setItem("access_token", access_token)
+    localStorage.setItem("access_token", access_token) //storing the token (setItem and if you see in components where this code is fetched it is getItem)
   })
   .catch((err) => console.log(err));
 }
