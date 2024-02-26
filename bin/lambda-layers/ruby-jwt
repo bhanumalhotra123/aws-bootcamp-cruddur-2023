@@ -1,0 +1,20 @@
+#! /usr/bin/bash
+
+# This script installs the 'firebase-ruby' gem, which provides an API for integrating Firebase functionality into Ruby applications, into a specific directory and then creates a zip file excluding certain files and directories.
+
+# Install the 'firebase-ruby' gem (-i) without documentation (-Ni) into the specified directory.
+gem install jwt -Ni /tmp/lambda-layers/ruby-jwt/ruby/gems/2.7.0
+cd /tmp/lambda-layers/ruby-jwt/
+# Create a zip file (-r) recursively including all files and directories from the current directory (.).
+# Exclude (-x) all files and directories starting with a dot (.*), excluding hidden files and directories.
+# Exclude (-x) the 'LICENSE', 'Makefile', and 'README.md' files from being included in the zip file.
+zip -r lambda-layers . -x ".*" -x "*/.*"
+
+# List (-t) the contents of the created zip file for verification.
+zipinfo -t lambda-layers
+
+aws lambda publish-layer-version \
+  --layer-name jwt \
+  --description "Lambda layer for jwt" \
+  --zip-file fileb://lambda-layers.zip \
+  --compatible-runtimes ruby3.2
