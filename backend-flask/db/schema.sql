@@ -4,12 +4,12 @@ DROP TABLE IF EXISTS public.users;
 DROP TABLE IF EXISTS public.activities;
 
 CREATE TABLE IF NOT EXISTS public.schema_information (
-  id integer UNIQUE
+  id integer UNIQUE,
   last_successful_run text,
 );
 
-INSERT INTO public.schema_information(id,last_successful_run)
-VALUES (1,'0')
+INSERT INTO public.schema_information (id, last_successful_run)
+VALUES(1, '0')
 ON CONFLICT (id) DO NOTHING;
 
 
