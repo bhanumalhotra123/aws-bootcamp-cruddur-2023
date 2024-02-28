@@ -241,7 +241,7 @@ def data_notifications():
 def data_handle(handle):
   model = UserActivities.run(handle)
   if model['errors'] is not None:
-    return model['errors'], 422
+    return model['errozrs'], 422
   else:
     return model['data'], 200
 
