@@ -25,7 +25,7 @@ export default function ProfileForm(props) {
         method: "POST",
         body: JSON.stringify(json),
         headers: {
-          'Origin': process.env.REACT_APP_FRONTEND_URL,
+          'Origin': 'https://3000-bhanumalhot-awsbootcamp-dooi3t349xz.ws-us108.gitpod.io/@bhanumalhotra',
           'Authorization': `Bearer ${access_token}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json'
