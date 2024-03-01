@@ -21,7 +21,7 @@ export default function ProfileForm(props) {
       const json = {
         extension: extension
       }
-      const res = await fetch(gateway_url, {
+      const res = await fetch('https://1qtnjutfre.execute-api.us-east-1.amazonaws.com/avatars/key_upload', {
         method: "POST",
         body: JSON.stringify(json),
         headers: {
