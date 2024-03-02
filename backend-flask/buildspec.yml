@@ -42,7 +42,7 @@ env:
     CONNECTION_URL: arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/CONNECTION_URL
     OTEL_EXPORTER_OTLP_HEADERS: arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/OTEL_EXPORTER_OTLP_HEADERS
     ROLLBAR_ACCESS_TOKEN: arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/ROLLBAR_ACCESS_TOKEN
-    
+
 artifacts:
   files:
     - imagedefinitions.json
