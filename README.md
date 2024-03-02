@@ -1,4 +1,4 @@
-
+![](https://codefactory-us-east-1-prod-default-build-badges.s3.amazonaws.com/unknown.svg)
 - Application: Cruddur
 
 ![Cruddur Graphic](_docs/assets/cruddur-banner.jpg)
