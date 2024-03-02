@@ -3,7 +3,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      docker: 20
+      docker: 21
     commands:
       - echo "cd into $CODEBUILD_SRC_DIR/backend-flask"
       - cd $CODEBUILD_SRC_DIR/backend-flask
@@ -30,7 +30,7 @@ env:
     CONTAINER_NAME: backend-flask
     IMAGE_URL: 774944129490.dkr.ecr.us-east-1.amazonaws.com
     REPO_NAME: backend-flask:latest
-    
+
 artifacts:
   files:
     - imagedefinitions.json
