@@ -3,7 +3,8 @@
 
 ![Cruddur Graphic](_docs/assets/cruddur-banner.jpg)
 
-![Cruddur Screenshot](_docs/assets/cruddur-screenshot.png)
+![Screenshot 2024-03-02 000628](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/7e7523b7-5f79-4653-9b37-ce2774bcde3f)
+
 
 ## Instructions
 
