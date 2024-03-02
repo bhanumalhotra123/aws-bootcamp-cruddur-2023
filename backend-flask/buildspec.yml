@@ -30,6 +30,18 @@ env:
     CONTAINER_NAME: backend-flask
     IMAGE_URL: 774944129490.dkr.ecr.us-east-1.amazonaws.com
     REPO_NAME: backend-flask:latest
+    AWS_COGNITO_USER_POOL_CLIENT_ID: 6roer8tk701iejmp627t0upavl
+    AWS_COGNITO_USER_POOL_ID: us-east-1_fpy2gmV5r
+    BACKEND_URL: "*"
+    FRONTEND_URL: "*"
+    OTEL_EXPORTER_OTLP_ENDPOINT: "https://api.honeycomb.io"
+    OTEL_SERVICE_NAME: backend-flask
+  parameter-store:
+    AWS_ACCESS_KEY_ID: arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/AWS_SECRET_ACCESS_KEY
+    CONNECTION_URL: arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/CONNECTION_URL
+    OTEL_EXPORTER_OTLP_HEADERS: arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/OTEL_EXPORTER_OTLP_HEADERS
+    ROLLBAR_ACCESS_TOKEN: arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/ROLLBAR_ACCESS_TOKEN
     
 artifacts:
   files:
