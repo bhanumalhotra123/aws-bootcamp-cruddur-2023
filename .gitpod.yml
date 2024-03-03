@@ -9,6 +9,10 @@ tasks:
       sudo ./aws/install
       cd $THEIA_WORKSPACE_ROOT
       bash bin/ecr/login
+      
+  - name: cfn
+    before: |
+      pip install cfn-lint
   - name: postgres
     before: |
       curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
