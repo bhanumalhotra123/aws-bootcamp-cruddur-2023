@@ -1,0 +1,10 @@
+#! /usr/bin/bash
+
+set -e # stop the execution of the script if it fails
+
+$CFN_PATH = "/workspace/aws-bootcamp-cruddur-2023/aws/cfn/template.yml"
+aws cloudformation deploy \
+  --stack-name "my-cluster" \
+  --template-file "template.yaml" \
+  --no-execute-changeset \
+  --capabilities CAPABILITY_NAMED_IAM
