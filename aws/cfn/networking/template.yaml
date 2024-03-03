@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+#VPC https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
+
+Resources: 
+  VPC: 
+    Type: AWS::EC2::VPC
+    Properties:
+    CidrBlock: 
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+
+
+#IGW
+#Route-Tables
+# Subnets
+# Subnet A
+# Subnet B
+# Subnet C
+
