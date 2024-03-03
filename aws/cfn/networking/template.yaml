@@ -6,10 +6,19 @@ Resources:
   VPC: 
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: 10.0.0.0/26
+      CidrBlock: 10.0.0.0/16
       EnableDnsHostnames: true
       EnableDnsSupport: true
       InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: CruddurVPC
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+       - Key: Name
+         Value: CruddurIGW
 
 
 #IGW
