@@ -6,7 +6,7 @@ Resources:
   VPC: 
     Type: AWS::EC2::VPC
     Properties:
-    CidrBlock: 
+      CidrBlock: 10.0.0.0/26
       EnableDnsHostnames: true
       EnableDnsSupport: true
       InstanceTenancy: default
