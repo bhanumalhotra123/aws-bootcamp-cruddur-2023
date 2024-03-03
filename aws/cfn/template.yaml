@@ -6,6 +6,8 @@ Description:
 Resources: 
   ECSCluster: #LogicalName
     Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName: MyCluster
 
 #Parameters: ""
   
