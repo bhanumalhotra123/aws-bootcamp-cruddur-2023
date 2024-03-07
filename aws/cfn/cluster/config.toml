@@ -1,7 +1,7 @@
 [deploy]
 bucket = 'cfn-artifacts-1'
 region = 'us-east-1'
-stack_name = 'CrudCluster'
+stack_name = 'CrdCluster'
 
 
 
