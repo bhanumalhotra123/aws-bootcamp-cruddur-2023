@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Task Definition
+  Fargate Service
+  Execution Role  
+  Task Role   
+Parameters:
+  NetworkingStack:
+    Type: String
+    Description: This is our base layer of networking components eg. VPC, Subnets
+    Default: CrdNet
+  ClusterStack:
+    Type: String
+    Description: This is our cluster layer of  eg. ECS Cluster, ALB 
+    Default: CrdNet
+  ServiceSG
+  FargateService:
+  TaskDefinition:
+  ExecutionRole:
+  Task Role:
+
+
+Resources:
+  
