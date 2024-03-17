@@ -1,4 +1,11 @@
 tasks:
+  - name: aws-sam
+    init: |
+      cd /workspace
+      wget https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip
+      unzip aws-sam-cli-linux-x86_64.zip -d sam-installation
+      sudo ./sam-installation/install
+      cd $THEIA_WORKSPACE_ROOT
   - name: cfn
     before: |
       pip install cfn-lint
@@ -13,7 +20,7 @@ tasks:
       unzip awscliv2.zip
       sudo ./aws/install
       cd $THEIA_WORKSPACE_ROOT
-      bash bin/ecr/login     
+      bash bin/ecr/login
   - name: postgres
     before: |
       curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
@@ -22,7 +29,7 @@ tasks:
       sudo apt install -y postgresql-client-13 libpq-dev
     command: |
       export GITPOD_IP=$(curl ifconfig.me)
-      source "$THEIA_WORKSPACE_ROOT/bin/rds/update-sg-rule"
+      source  "$THEIA_WORKSPACE_ROOT/bin/rds/update-sg-rule"
   - name: react-js
     command: |
       ruby $THEIA_WORKSPACE_ROOT/bin/frontend/generate-env
@@ -40,17 +47,16 @@ tasks:
       sudo dpkg -i session-manager-plugin.deb
       cd $THEIA_WORKSPACE_ROOT
       cd backend-flask
-  - name: cdk 
+  - name: cdk
     before: |
-      npm install aws-cdk-lib -g
+      npm install aws-cdk -g
       cd thumbing-serverless-cdk
       cp .env.example .env
       npm i
-
 vscode:
-
   extensions:
     - 42Crunch.vscode-openapi
+    - cweijan.vscode-postgresql-client2
 
 ports:
   - name: frontend
