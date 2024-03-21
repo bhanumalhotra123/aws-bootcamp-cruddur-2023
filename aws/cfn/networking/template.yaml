@@ -58,6 +58,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}IGW"
+
   AttachIGW:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -72,6 +73,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}RT"
+
   RouteToIGW:
     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
     Type: AWS::EC2::Route
@@ -93,6 +95,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}SubnetPub1"
+          
   SubnetPub2:
     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
     Type: AWS::EC2::Subnet

@@ -14,62 +14,83 @@ Description: |
     - redirects to HTTPS Listerner
   - Backend Target Group
   - Frontend Target Group
+
 Parameters:
+
   NetworkingStack:
     Type: String
     Description: This is our base layer of networking components eg. VPC, Subnets
     Default: CrdNet
+
   CertificateArn:
     Type: String
+
   FrontendPort:
     Type: Number
     Default: 3000
+
   FrontendHealthCheckIntervalSeconds:
     Type: Number
     Default: 15
+
   FrontendHealthCheckPath:
     Type: String
     Default: /
+
   FrontendHealthCheckPort:
     Type: String
     Default: 80
+
   FrontendHealthCheckProtocol:
     Type: String
     Default: HTTP
+
   FrontendHealthCheckTimeoutSeconds:
     Type: Number
     Default: 5
+
   FrontendHealthyThresholdCount:
     Type: Number
     Default: 2
+
   FrontendUnhealthyThresholdCount:
     Type: Number
     Default: 2
+
   BackendPort:
     Type: Number
     Default: 4567
+
   BackendHealthCheckIntervalSeconds:
     Type: String
     Default: 15
+
   BackendHealthCheckPath:
     Type: String
     Default: /api/health-check
+
   BackendHealthCheckPort:
     Type: String
     Default: 80
+
   BackendHealthCheckProtocol:
     Type: String
     Default: HTTP
+
   BackendHealthCheckTimeoutSeconds:
     Type: Number
     Default: 5
+
   BackendHealthyThresholdCount:
     Type: Number
     Default: 2
+    
   BackendUnhealthyThresholdCount:
     Type: Number
     Default: 2
+
 Resources:
+
   FargateCluster:
     Type: AWS::ECS::Cluster
     Properties:
@@ -84,6 +105,7 @@ Resources:
           Logging: DEFAULT
       ServiceConnectDefaults:
         Namespace: cruddur
+
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -148,6 +170,7 @@ Resources:
           TargetGroupArn: !Ref BackendTG
       ListenerArn: !Ref HTTPSListener
       Priority: 1
+
   ALBSG:
     Type: AWS::EC2::SecurityGroup
     Properties:

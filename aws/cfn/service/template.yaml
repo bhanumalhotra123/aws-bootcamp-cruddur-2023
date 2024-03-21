@@ -6,70 +6,91 @@ Description: |
   Task Role
 
 Parameters:
+
   NetworkingStack:
     Type: String
     Description: This is our base layer of networking components eg. VPC, Subnets
     Default: CrdNet
+
   ClusterStack:
     Type: String
     Description: This is our cluster layer eg. ECS Cluster, ALB
     Default: CrdCluster
+
   ContainerPort:
     Type: Number
     Default: 4567
+
   ServiceCpu:
     Type: String
     Default: '256'
+
   ServiceMemory:
     Type: String
     Default: '512'
+
   ServiceName:
     Type: String
     Default: backend-flask
+
   ContainerName:
     Type: String
     Default: backend-flask
+
   TaskFamily:
     Type: String
     Default: backend-flask
+
   EcrImage:
     Type: String
-    Default: '/backend-flask'
+    Default: '774944129490.dkr.ecr.us-east-1.amazonaws.com/backend-flask'
+
   EnvOtelServiceName:
     Type: String
     Default: backend-flask
+
   EnvOtelExporterOtlpEndpoint:
     Type: String
     Default: https://api.honeycomb.io
+
   EnvAWSCognitoUserPoolId:
     Type: String
     Default: us-east-1_fpy2gmV5r
+
   EnvCognitoUserPoolClientId:
     Type: String
     Default: 6roer8tk701iejmp627t0upavl
+
   EnvFrontendUrl:
     Type: String
     Default: "*"
+
   EnvBackendUrl:
     Type: String
     Default: "*"
+    
   SecretsAWSAccessKeyId:
-    Type: String
+    Type: String          
     Default: 'arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/AWS_ACCESS_KEY_ID'
+
   SecretsSecretAccessKey:
     Type: String
     Default: 'arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/AWS_SECRET_ACCESS_KEY'
+
   SecretsConnectionUrl:
     Type: String
     Default: 'arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/CONNECTION_URL'
+
   SecretsRollbarAccessToken:
     Type: String
     Default: 'arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/ROLLBAR_ACCESS_TOKEN'
+ 
   SecretsOtelExporterOltpHeaders:
     Type: String
     Default: 'arn:aws:ssm:us-east-1:774944129490:parameter/cruddur/backend-flask/OTEL_EXPORTER_OTLP_HEADERS'
   
 Resources:
+
   FargateService:
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-service.html
     Type: AWS::ECS::Service
