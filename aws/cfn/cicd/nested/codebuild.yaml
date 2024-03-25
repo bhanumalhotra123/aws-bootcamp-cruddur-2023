@@ -30,10 +30,9 @@ Resources:
     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-codebuild-project.html
     Type: AWS::CodeBuild::Project
     Properties:
+      Name: !Sub "${AWS::StackName}CodeBuildProject"  # Set the project name explicitly
       QueuedTimeoutInMinutes: !Ref CodeBuildTimeoutMins
       ServiceRole: !GetAtt CodeBuildRole.Arn
-      # PrivilegedMode is needed to build Docker images
-      # even though we have No Artifacts, CodePipeline Demands both to be set as CODEPIPLINE
       Artifacts:
         Type: CODEPIPELINE
       Environment:
@@ -50,7 +49,6 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: !Ref BuildSpec
   CodeBuildRole:
-    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -107,7 +105,17 @@ Resources:
                 Resource:
                   - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${LogGroupPath}*
                   - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${LogGroupPath}:*
+        - PolicyName: !Sub ${AWS::StackName}S3Policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                Resource: "*"
 Outputs:
   CodeBuildProjectName:
     Description: "CodeBuildProjectName"
-    Value: !Sub ${AWS::StackName}Project
+    Value: !Ref CodeBuild  # Output the logical ID of the CodeBuild project resource
