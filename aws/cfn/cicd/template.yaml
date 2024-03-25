@@ -9,7 +9,7 @@ Parameters:
     Default: prod
   GithubRepo:
     Type: String
-    Default: 'bhanumalhotra/aws-bootcamp-cruddur-2023'
+    Default: 'bhanumalhotra123/aws-bootcamp-cruddur-2023'
   ClusterStack:
     Type: String
   ServiceStack:
