@@ -11,7 +11,7 @@ Parameters:
     Description: Arn for the GitHub OIDC Provider.
     Default: ""
     Type: String
-  OIDCAudience:``
+  OIDCAudience:
     Description: Audience supplied to configure-aws-credentials.
     Default: "sts.amazonaws.com"
     Type: String
