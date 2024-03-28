@@ -20,4 +20,5 @@ aws cloudformation deploy \
   --region $REGION \
   --no-execute-changeset \
   --tags group=cruddur-service \
+  --parameter-overrides $PARAMETERS \
   --capabilities CAPABILITY_NAMED_IAM
