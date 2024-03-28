@@ -6,3 +6,7 @@ stack_name = 'CrdSrvBackendFlask'
 
 
 [parameters]
+
+EnvFrontendUrl = 'gooddesignsolutions.in'
+
+EnvBackendUrl = 'api.gooddesignsolutions.in'
