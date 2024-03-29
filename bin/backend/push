@@ -5,3 +5,8 @@ echo $ECR_BACKEND_FLASK_URL
 
 docker tag backend-flask-prod:latest $ECR_BACKEND_FLASK_URL:latest
 docker push $ECR_BACKEND_FLASK_URL:latest
+
+
+
+PROD_CONNECTION_URL=postgresql://root:Passaword1234@cruddur-instance.c1skkgy8m8cl.us-east-1.rds.amazonaws.com:5432/cruddur
+

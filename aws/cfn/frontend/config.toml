@@ -1,0 +1,9 @@
+[deploy]
+bucket = 'cfn-artifacts-1'
+region = 'us-east-1'
+stack_name = 'CrdFrontend'
+
+[parameters]
+CertificateArn = 'arn:aws:acm:us-east-1:774944129490:certificate/23952ab8-a4a3-4544-8773-f68944c18a4c'
+WwwBucketName = 'www.gooddesignsolutions.in'
+RootBucketName = 'gooddesignsolutions.in'

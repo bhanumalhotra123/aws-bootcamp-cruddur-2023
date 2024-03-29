@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description:
+  - DynamoDB Table
+  - DynamoDB Streams
+
+Resources:
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: message_group_uuid
+          AttributeType: S
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: RANGE    
+      KeySchema: 
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      BillingMode: PROVISIONED
+      DeletionProtectionEnabled: true
+      GlobalSecondaryIndexes:
+        - IndexName: String,
+          KeySchema: message-group-sk-index
+            - AttributeName: message_group_uuid
+              KeyType:  HASH
+            - AttributeName: sk
+              KeyType:  RANGE
+          Projection:
+            
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+  ProcessDynamoDBStream:
+  #https://docs.aws.amazon.com/lambda/latest/dg/kinesis-tutorial-spec.html
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler
+      Runtime: runtime
+      Policies: AWSLambdaDynamoDBExecutionRole
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt DynamoDBTable.StreamArn
+            BatchSize: 100
+            StartingPosition: TRIM_HORIZON
+

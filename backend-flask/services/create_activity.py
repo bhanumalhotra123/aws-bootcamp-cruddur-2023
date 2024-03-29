@@ -5,7 +5,7 @@ from lib.db import db
 # Define a class named CreateActivity
 class CreateActivity:
   # Define a method named run, which takes three parameters: message, user_handle, and ttl
-  def run(message, user_handle, ttl):
+  def run(message, cognito_user_id, ttl):
     # Initialize a dictionary to store the model's errors and data
     model = {
       'errors': None,
@@ -35,8 +35,8 @@ class CreateActivity:
       model['errors'] = ['ttl_blank']
 
     # Check if user_handle is None or has less than 1 character, set an error in the model
-    if user_handle == None or len(user_handle) < 1:
-      model['errors'] = ['user_handle_blank']
+    if cognito_user_id == None or len(cognito_user_id) < 1:
+      model['errors'] = ['cognito_user_id_blank']
 
     # Check if message is None or has less than 1 character, or exceeds the maximum allowed characters
     if message == None or len(message) < 1:
@@ -54,7 +54,7 @@ class CreateActivity:
     else:
       # If no errors, calculate the expiration time, create an activity, and query the object
       expires_at = (now + ttl_offset)
-      uuid = CreateActivity.create_activity(user_handle, message, expires_at)
+      uuid = CreateActivity.create_activity(cognito_user_id, message, expires_at)
       object_json = CreateActivity.query_object_activity(uuid)
       model['data'] = object_json
 
@@ -62,12 +62,12 @@ class CreateActivity:
     return model
 
   # Define a method named create_activity, which takes handle, message, and expires_at as parameters
-  def create_activity(handle, message, expires_at):
+  def create_activity(cognito_user_id, message, expires_at):
     # Create an SQL template for creating an activity
     sql = db.template('activities', 'create')
     # Query the database and commit the changes, storing the UUID
     uuid = db.query_commit(sql, {
-      'handle': handle,
+      'cognito_user_id': cognito_user_id,
       'message': message,
       'expires_at': expires_at
     })

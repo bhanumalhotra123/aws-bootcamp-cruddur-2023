@@ -1,0 +1,11 @@
+[deploy]
+bucket = 'cfn-artifacts-1'
+region = 'us-east-1'
+stack_name = 'CrdSrvBackendFlask'
+
+
+
+[parameters]
+
+EnvFrontendUrl = 'https://gooddesignsolutions.in'
+EnvBackendUrl = 'https://api.gooddesignsolutions.in'
