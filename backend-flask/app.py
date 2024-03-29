@@ -266,13 +266,13 @@ def data_activities():
     claims = cognito_jwt_token.verify(access_token)
     cognito_user_id = claims['sub']
   
-  message = request.json['message']
-  ttl = request.json['ttl']
-  model = CreateActivity.run(message, cognito_user_id, ttl)
-  if model['errors'] is not None:
-    return model['errors'], 422
-  else:
-    return model['data'], 200
+    message = request.json['message']
+    ttl = request.json['ttl']
+    model = CreateActivity.run(message, cognito_user_id, ttl)
+    if model['errors'] is not None:
+      return model['errors'], 422
+    else:
+      return model['data'], 200
   except TokenVerifyError as e:
     # unauthenicatied request
     app.logger.debug(e)
