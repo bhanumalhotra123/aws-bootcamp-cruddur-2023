@@ -1,11 +1,10 @@
 ![](https://codefactory-us-east-1-prod-default-build-badges.s3.amazonaws.com/unknown.svg)
 - Application: Cruddur
 
-![Cruddur Graphic](_docs/assets/cruddur-banner.jpg)
 
 ![Screenshot 2024-03-02 000628](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/7e7523b7-5f79-4653-9b37-ce2774bcde3f)
 
-
+![Cruddur Graphic](_docs/assets/cruddur-banner.jpg)
 ## Instructions
 
 At the start of the bootcamp you need to create a new Github Repository from this template.
