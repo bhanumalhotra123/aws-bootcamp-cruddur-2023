@@ -59,7 +59,7 @@ for migration_file in migration_files:
         file_time = int(match.group())
         
         # Check if the timestamp of the migration file is greater than or equal to the timestamp of the last successful run
-        if last_successful_run <= file_time:
+        if last_successful_run < file_time:
             # Import the migration module dynamically
             mod = importlib.import_module(module_name)
             # Print a message indicating that the migration is being run

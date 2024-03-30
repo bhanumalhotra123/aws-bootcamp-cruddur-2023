@@ -7,65 +7,49 @@ import re
 import time
 import importlib
 
-# Get the current directory of the script
 current_path = os.path.dirname(os.path.abspath(__file__))
-# Get the parent directory of the current directory
 parent_path = os.path.abspath(os.path.join(current_path, '..', '..','backend-flask'))
-# Add the parent directory to the system path to be able to import modules from it
 sys.path.append(parent_path)
-
-# Import the database module from the backend-flask project
 from lib.db import db
 
-# Function to retrieve the timestamp of the last successful migration run from the database
 def get_last_successful_run():
-    sql = """
-        SELECT last_successful_run
-        FROM public.schema_information
-        LIMIT 1
-    """
-    return int(db.query_value(sql,{},verbose=False))
+  sql = """
+    SELECT last_successful_run
+    FROM public.schema_information
+    LIMIT 1
+  """
+  return int(db.query_value(sql,{},verbose=False))
 
-# Function to update the timestamp of the last successful migration run in the database
 def set_last_successful_run(value):
-    sql = """
-        UPDATE schema_information
-        SET last_successful_run = %(last_successful_run)s
-        WHERE id = 1
-    """
-    db.query_commit(sql,{'last_successful_run': value})
-    return value
+  sql = """
+  UPDATE schema_information
+  SET last_successful_run = %(last_successful_run)s
+  WHERE id = 1
+  """
+  db.query_commit(sql,{'last_successful_run': value})
+  return value
 
-# Get the timestamp of the last successful migration run
 last_successful_run = get_last_successful_run()
 
-# Get the path to the migrations directory
 migrations_path = os.path.abspath(os.path.join(current_path, '..', '..','backend-flask','db','migrations'))
-# Add the migrations directory to the system path to be able to import migration modules from it
 sys.path.append(migrations_path)
-# Get a list of all migration files in the migrations directory
 migration_files = glob.glob(f"{migrations_path}/*")
 
-# Initialize variable to store the name of the last migration file
-last_migration_file = None
-# Iterate through each migration file
-for migration_file in migration_files:
-    # If the last_migration_file is not set
-    if last_migration_file == None:
-        # Get the filename and module name of the migration file
-        filename = os.path.basename(migration_file)
-        module_name = os.path.splitext(filename)[0]
-        # Extract the timestamp from the filename
-        match = re.match(r'^\d+', filename)
-        if match:
-            file_time = int(match.group())
-            # Compare the timestamp of the migration file with the timestamp of the last successful run
-            if last_successful_run > file_time:
-                # If the migration file's timestamp is older than the last successful run, roll back the migration
-                last_migration_file = module_name
-                mod = importlib.import_module(module_name)
-                print('=== rolling back: ', module_name)
-                mod.migration.rollback()
-                # Update the timestamp of the last successful run in the database
-                set_last_successful_run(file_time)
 
+last_migration_file = None
+for migration_file in migration_files:
+  if last_migration_file == None:
+    filename = os.path.basename(migration_file)
+    module_name = os.path.splitext(filename)[0]
+    match = re.match(r'^\d+', filename)
+    if match:
+      file_time = int(match.group())
+      print("==<><>")
+      print(last_successful_run, file_time)
+      print(last_successful_run > file_time)
+      if last_successful_run > file_time:
+        last_migration_file = module_name
+        mod = importlib.import_module(module_name)
+        print('=== rolling back: ',module_name)
+        mod.migration.rollback()
+        set_last_successful_run(str(file_time))
