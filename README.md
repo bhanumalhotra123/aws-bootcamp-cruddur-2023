@@ -3,17 +3,16 @@
 
 
 
-https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/0d2847c4-3c09-44cb-b150-dfff5ae70769
+
+https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/136bd5f5-7152-40c7-98cf-c1a5733e111d
+
 
 
 ![Screenshot 2024-03-02 000628](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/7e7523b7-5f79-4653-9b37-ce2774bcde3f)
 
 ![Cruddur Graphic](_docs/assets/cruddur-banner.jpg)
-## Instructions
 
-At the start of the bootcamp you need to create a new Github Repository from this template.
-
-## Journaling Homework
+## Journaling 
 
 The `/journal` directory contains
 
