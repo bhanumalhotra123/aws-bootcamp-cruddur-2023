@@ -2,8 +2,8 @@ import './SignupPage.css';
 import React from "react";
 import {ReactComponent as Logo} from '../components/svg/logo.svg';
 import { Link } from "react-router-dom";
+import FormErrors from 'components/FormErrors';
 
-// [TODO] Authenication
 import { Auth } from 'aws-amplify';
 
 export default function SignupPage() {
@@ -13,11 +13,11 @@ export default function SignupPage() {
   const [email, setEmail] = React.useState('');
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [errors, setErrors] = React.useState('');
+  const [errors, setErrors] = React.useState([]);
 
   const onsubmit = async (event) => {
     event.preventDefault();
-    setErrors('')
+    setErrors([])
     console.log('username',username)
     console.log('email',email)
     console.log('name',name)
@@ -37,8 +37,7 @@ export default function SignupPage() {
       console.log(user);
       window.location.href = `/confirm?email=${email}`
     } catch (error) {
-        console.log(error);
-        setErrors(error.message)
+        setErrors([error.message])
     }
     return false
   }
@@ -54,11 +53,6 @@ export default function SignupPage() {
   }
   const password_onchange = (event) => {
     setPassword(event.target.value);
-  }
-
-  let el_errors;
-  if (errors){
-    el_errors = <div className='errors'>{errors}</div>;
   }
 
   return (
@@ -109,7 +103,7 @@ export default function SignupPage() {
               />
             </div>
           </div>
-          {el_errors}
+          <FormErrors errors={errors} />
           <div className='submit'>
             <button type='submit'>Sign Up</button>
           </div>
