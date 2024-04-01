@@ -5,7 +5,11 @@
 If you wish to understand how all the cloud components were built in this project please refer the journaling links given below these two videos.
 
 
-https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/80abbe57-9c5f-458f-b7ea-ca3af4da280c
+https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/5d3bfdf4-6a8b-413b-a023-8b72dcdee634
+
+
+
+
   
 https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/77dee25e-6979-4990-a399-98f3072acd3c
 
