@@ -1,16 +1,11 @@
 ![](https://codefactory-us-east-1-prod-default-build-badges.s3.amazonaws.com/unknown.svg)
 - Application: Cruddur
+If you wish to understand how all the cloud components were built in this project please refer the journaling links given below these two videos.
 
 
-
-https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/4390843f-2212-49c3-8493-eb7bf6b20fff
-
-
-
+https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/80abbe57-9c5f-458f-b7ea-ca3af4da280c
+  
 https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/77dee25e-6979-4990-a399-98f3072acd3c
-
-
-
 
 
 
