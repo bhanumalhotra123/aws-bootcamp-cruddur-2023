@@ -2,11 +2,19 @@ Cheap / Fast / Good ------- Pick two
 
 
 
-Well-Architected Framework’s six pillars
-https://aws.amazon.com/well-architected-tool/
 
-1. Operational Excellence
-The Operational Excellence pillar includes the ability to support development and run workloads effectively, gain insight into their operation, and continuously improve supporting processes and procedures to delivery business value. You can find prescriptive guidance on implementation in the Operational Excellence Pillar whitepaper.
+
+[Well-Architected Framework’s doc](https://aws.amazon.com/well-architected-tool/)
+
+
+- **Strive for Operational Excellence:** Continuously improve processes to efficiently deliver value to stakeholders.
+- **Ensure Security:** Implement robust measures to safeguard data, systems, and assets from threats.
+- **Prioritize Reliability:** Build dependable systems to meet business objectives and maintain trust.
+- **Enhance Performance Efficiency:** Optimize resource usage to deliver responsive and scalable services.
+- **Foster Cost Optimization:** Minimize expenses while maintaining performance, reliability, and security.
+- **Embrace Sustainability:** Integrate eco-friendly practices to minimize environmental impact and ensure long-term viability.
+
+
 
 Design Principles
 There are five design principles for operational excellence in the cloud:
@@ -40,6 +48,8 @@ Before you architect any workload, you need to put in place practices that influ
 You should have a well-defined and practiced process for responding to security incidents. These tools and techniques are important because they support objectives such as preventing financial loss or complying with regulatory obligations.
 
 The AWS Shared Responsibility Model enables organizations that adopt the cloud to achieve their security and compliance goals. Because AWS physically secures the infrastructure that supports our cloud services, as an AWS customer you can focus on using services to accomplish your goals. The AWS Cloud also provides greater access to security data and an automated approach to responding to security events.
+
+
 
 3. Reliability
 The Reliability pillar encompasses the ability of a workload to perform its intended function correctly and consistently when it’s expected to. This includes the ability to operate and test the workload through its total lifecycle. You can find prescriptive guidance on implementation in the Reliability Pillar whitepaper.
@@ -158,7 +168,7 @@ https://lucid.app/lucidchart/a718841a-2e2d-4052-9a2a-5f8c633ce9b4/edit?beaconFlo
 
 
 Billing and cost
-can setup budget (threshold) based on charges and on things like hours used of a particular service.
+Can setup budget (threshold) based on charges and on things like hours used of a particular service.
 Can setup alerts (email)
 
 
@@ -168,7 +178,7 @@ https://passwordsgenerator.net/
 
 
 AWS CLI auto-prompt
-
+```
 [cloudshell-user@ip-10-140-98-140 ~]$ aws --cli-auto-prompt
 > aws sts get-caller-identity
 {
@@ -177,7 +187,7 @@ AWS CLI auto-prompt
     "Arn": "arn:aws:iam::739722460796:user/bhanu"
 }
 [cloudshell-user@ip-10-140-98-140 ~]$ 
-
+```
 
 
 
