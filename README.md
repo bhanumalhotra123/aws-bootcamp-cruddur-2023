@@ -1,5 +1,7 @@
 ![](https://codefactory-us-east-1-prod-default-build-badges.s3.amazonaws.com/unknown.svg)
 - Application: Cruddur
+
+    
 If you wish to understand how all the cloud components were built in this project please refer the journaling links given below these two videos.
 
 
