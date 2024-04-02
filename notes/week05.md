@@ -132,6 +132,13 @@ print(response)
   
 - Created new folder in ddb named patterns, then created 2 new files: get-conversation and list-conversations.
 
+> These allow us to begin implementing our access patterns. We first complete get-conversation, make it executable, then run it. This is similar to a scan, but
+>  we’re returning information that we queried and limiting the results. In list-conversations, we began another our of access patterns. Andrew goes through
+>  explaining the information we’re querying here as well, then we test. While testing, we go back to db.py in backend-flask/lib and update all instances of
+>  print_sql to pass the params we set while refining our queries for mock data.
+
+
+Get converstaion:
 ```
 #!/usr/bin/env python3
 
@@ -191,11 +198,55 @@ response = dynamodb.query(**query_params)
 print(json.dumps(response, sort_keys=True, indent=2))
 ```
 
+
+The function that is used in the above get-converstations script to fetch the user.uuid:
+```
+def query_value(self, sql, params={}):
+    self.print_sql('value', sql, params)
+    with self.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            result = cur.fetchone()
+            return result[0]
+
+```
+
+Sample table
+```
+|     pk           |      sk        |  message_group_uuid  |
+|-----------------------------------------------------------|
+|  GRP#123456789   |   2023#item1   |       group_uuid_1   |
+|  GRP#123456789   |   2023#item2   |       group_uuid_1   |
+|  GRP#123456789   |   2024#item1   |       group_uuid_1   |
+|  GRP#123456789   |   2024#item2   |       group_uuid_1   |
+|  GRP#987654321   |   2023#item1   |       group_uuid_2   |
+|  GRP#987654321   |   2024#item1   |       group_uuid_2   |
+
+```
+Let's assume my_user_uuid resolves to "123456789" and year resolves to "2024".
+
+The query will select items where:
+
+The partition key (pk) matches the value "GRP#123456789".
+The sort key (sk) begins with the value "2024".
+
+Result:
+
+```
+|     pk           |      sk        |  message_group_uuid  |
+|-----------------------------------------------------------|
+|  GRP#123456789   |   2024#item1   |       group_uuid_1   |
+|  GRP#123456789   |   2024#item2   |       group_uuid_1   |
+
+```
+
+
+
+
+
+
   
-> These allow us to begin implementing our access patterns. We first complete get-conversation, make it executable, then run it. This is similar to a scan, but
->  we’re returning information that we queried and limiting the results. In list-conversations, we began another our of access patterns. Andrew goes through
->  explaining the information we’re querying here as well, then we test. While testing, we go back to db.py in backend-flask/lib and update all instances of
->  print_sql to pass the params we set while refining our queries for mock data.
+
   
 Added the following snippet in gitpod.yml
 ```yml
