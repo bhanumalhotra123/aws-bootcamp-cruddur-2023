@@ -4,7 +4,7 @@ guest instructor this week, Mr. Kirk Kirkconnell( lead developer advocate for Mo
   
 DynamoDB is a fully managed, serverless, NoSQL database designed to run high performance applications at any scale. It’s hosted by Amazon Web Services. 
   
-This following helped me understand more about dynamodb(things like LSI, GSI etc):  
+This following helped me understand more about dynamodb:  
 https://aws.amazon.com/blogs/compute/creating-a-single-table-design-with-amazon-dynamodb/
   
 
@@ -16,12 +16,104 @@ https://aws.amazon.com/blogs/compute/creating-a-single-table-design-with-amazon-
 - Moved rds-update-sg-rule to rds folder and removed “rds”.
 - Created a new folder in backend-flask/bin named ddb for DynamoDB stuff.
 - Created new files in ddb folder: drop, schema-load, seed.(Also made them executable using chmod)
+
+
+[Dynamodb create_table boto3 doc](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/create_table.html)
 - Copied create table code from AWS Boto3 documentation. It wasn’t perfect, so adjusted code for schema.  
     
-https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/create_table.html
+
       
 - Added the configuration for dynamodb in docker-compose which was commented out earlier for saving on compute.
+
+```
+  dynamodb-local:
+    # https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
+    # We needed to add user:root to get this working.
+    user: root
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    image: "amazon/dynamodb-local:latest"
+    container_name: dynamodb-local
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./docker/dynamodb:/home/dynamodblocal/data"
+```
+
 - Ran ./bin/ddb/schema-load from the backend-flask directory.  It created our local DynamoDB table.
+
+Now going forward we can use it for messages
+
+```
+#!/usr/bin/env python3
+
+import boto3
+import sys
+
+attrs = {
+  'endpoint_url': 'http://localhost:8000'
+}
+
+if len(sys.argv) == 2:
+  if "prod" in sys.argv[1]:
+    attrs = {}
+
+ddb = boto3.client('dynamodb',**attrs)
+
+table_name = 'cruddur-messages'
+
+
+response = ddb.create_table(
+  TableName=table_name,
+  AttributeDefinitions=[
+    {
+      'AttributeName': 'message_group_uuid',
+      'AttributeType': 'S'
+    },
+    {
+      'AttributeName': 'pk',
+      'AttributeType': 'S'
+    },
+    {
+      'AttributeName': 'sk',
+      'AttributeType': 'S'
+    },
+  ],
+  KeySchema=[
+    {
+      'AttributeName': 'pk',
+      'KeyType': 'HASH'
+    },
+    {
+      'AttributeName': 'sk',
+      'KeyType': 'RANGE'
+    },
+  ],
+  GlobalSecondaryIndexes= [{
+    'IndexName':'message-group-sk-index',
+    'KeySchema':[{
+      'AttributeName': 'message_group_uuid',
+      'KeyType': 'HASH'
+    },{
+      'AttributeName': 'sk',
+      'KeyType': 'RANGE'
+    }],
+    'Projection': {
+      'ProjectionType': 'ALL'
+    },
+    'ProvisionedThroughput': {
+      'ReadCapacityUnits': 5,
+      'WriteCapacityUnits': 5
+    },
+  }],
+  BillingMode='PROVISIONED',
+  ProvisionedThroughput={
+      'ReadCapacityUnits': 5,
+      'WriteCapacityUnits': 5
+  }
+)
+
+print(response)
+```
     
 ![Schemaload-ddb](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/c9bdec40-9edc-44a5-8ade-9673e8b43ba5)
 
@@ -29,6 +121,9 @@ https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynam
 - Created  list-tables under ddb.
 - Created drop in ddb folder.
 - Created seed in ddb folder.(The script fetches user information from a PostgreSQL database, creates message groups in DynamoDB, and populates these groups with messages, demonstrating integration between the two databases for user messaging functionality.)
+
+  
+
 ![Seeding](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/3f48da00-c3f7-41f5-a78a-5834b33d366a)
   
   
@@ -36,6 +131,66 @@ https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynam
 - Created scan and set it for local DynamoDB only, as doing a scan in production can be expensive.
   
 - Created new folder in ddb named patterns, then created 2 new files: get-conversation and list-conversations.
+
+```
+#!/usr/bin/env python3
+
+import boto3
+import sys
+import json
+import os
+
+current_path = os.path.dirname(os.path.abspath(__file__))
+parent_path = os.path.abspath(os.path.join(current_path, '..', '..', '..'))
+sys.path.append(parent_path)
+from lib.db import db
+
+attrs = {
+  'endpoint_url': 'http://localhost:8000'
+}
+
+if len(sys.argv) == 2:
+  if "prod" in sys.argv[1]:
+    attrs = {}
+
+dynamodb = boto3.client('dynamodb',**attrs)
+table_name = 'cruddur-messages'
+
+def get_my_user_uuid():
+  sql = """
+    SELECT 
+      users.uuid
+    FROM users
+    WHERE
+      users.handle =%(handle)s
+  """
+  uuid = db.query_value(sql,{
+    'handle':  'andrewbrown'
+  })
+  return uuid
+
+my_user_uuid = get_my_user_uuid()
+print(f"my-uuid: {my_user_uuid}")
+year = str(datetime.now().year)
+# define the query parameters
+query_params = {
+  'TableName': table_name,
+  'KeyConditionExpression': 'pk = :pk AND begins_with(sk,:year)',
+  'ScanIndexForward': False,
+  'ExpressionAttributeValues': {
+    ':year': {'S': year },
+    ':pk': {'S': f"GRP#{my_user_uuid}"}
+  },
+  'ReturnConsumedCapacity': 'TOTAL'
+}
+
+# query the table
+response = dynamodb.query(**query_params)
+
+# print the items returned by the query
+print(json.dumps(response, sort_keys=True, indent=2))
+```
+
   
 > These allow us to begin implementing our access patterns. We first complete get-conversation, make it executable, then run it. This is similar to a scan, but
 >  we’re returning information that we queried and limiting the results. In list-conversations, we began another our of access patterns. Andrew goes through
