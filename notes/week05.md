@@ -121,6 +121,258 @@ print(response)
 - Created  list-tables under ddb.
 - Created drop in ddb folder.
 - Created seed in ddb folder.(The script fetches user information from a PostgreSQL database, creates message groups in DynamoDB, and populates these groups with messages, demonstrating integration between the two databases for user messaging functionality.)
+  
+  
+
+Script for seeding
+This script is a Python script that interacts with AWS DynamoDB to create message records for a messaging system. Here's a breakdown of what it does:
+
+- Imports: The script imports necessary libraries including boto3 for AWS interaction, os, sys, datetime, timedelta, timezone, and uuid.
+- Setting up paths: It sets up paths for importing custom libraries.
+- Establishing DynamoDB Client: It creates a DynamoDB client using boto3.client.
+- get_user_uuids Function: This function queries a database for user information based on their handles.
+- create_message_group Function: This function creates a message group record in DynamoDB.
+- create_message Function: This function creates individual message records in DynamoDB.
+- Initial Data Setup: It sets up some initial data including a conversation and extracts users' messages and their corresponding user UUIDs.
+- Loop for Creating Messages: It iterates through the conversation lines, determines which user the message belongs to (Person 1 or Person 2), assigns a timestamp to the message, and calls the create_message function to insert each message into DynamoDB.
+
+In summary, the script creates:
+```
+#!/usr/bin/env python3
+
+import boto3
+import os
+import sys
+from datetime import datetime, timedelta, timezone
+import uuid
+
+current_path = os.path.dirname(os.path.abspath(__file__))
+parent_path = os.path.abspath(os.path.join(current_path, '..', '..'))
+sys.path.append(parent_path)
+from lib.db import db
+
+attrs = {
+  'endpoint_url': 'http://localhost:8000'
+}
+# unset endpoint url for use with production database
+if len(sys.argv) == 2:
+  if "prod" in sys.argv[1]:
+    attrs = {}
+ddb = boto3.client('dynamodb',**attrs)
+
+
+def get_user_uuids():
+  sql = """
+    SELECT 
+      users.uuid,
+      users.display_name,
+      users.handle
+    FROM users
+    WHERE
+      users.handle IN(
+        %(my_handle)s,
+        %(other_handle)s
+        )
+  """
+
+
+#This part defines an SQL query that selects uuid, display_name, and handle from the users table where the handle matches either %(my_handle)s or %(other_handle)s.
+
+  users = db.query_array_json(sql,{
+    'my_handle':  'andrewbrown',
+    'other_handle': 'bayko'
+  })
+
+                                                                                          now here we are calling query_array_json, the code for the query_array_json is following this isn't part of this script:
+                                                                                          
+                                                                                            def query_array_json(self,sql,params={}):
+                                                                                              self.print_sql('array',sql,params)
+                                                                                          
+                                                                                              wrapped_sql = self.query_wrap_array(sql)
+                                                                                              with self.pool.connection() as conn:
+                                                                                                with conn.cursor() as cur:
+                                                                                                  cur.execute(wrapped_sql,params)
+                                                                                                  json = cur.fetchone()
+                                                                                                  return json[0]
+
+
+
+                                                                                          now this is further calling query_wrap_array from the class we created initially
+                                                                                          
+                                                                                          def query_wrap_array(self,template):
+                                                                                              sql = f"""
+                                                                                              (SELECT COALESCE(array_to_json(array_agg(row_to_json(array_row))),'[]'::json) FROM (
+                                                                                              {template}
+                                                                                              ) array_row);
+                                                                                              """
+                                                                                              return sql
+
+
+
+                                                                                              In the context of this code snippet, the conversion to a JSON array is likely done to make the result set of the SQL query more compatible with modern web applications or other systems that consume JSON data.
+                                                                                              
+                                                                                              Here's a breakdown of the terms involved:
+                                                                                              
+                                                                                              JSON (JavaScript Object Notation): JSON is a lightweight data interchange format that is easy for humans to read and write and easy for machines to parse and generate. It is based on key-value pairs and supports various data types, including objects (key-value pairs), arrays (ordered lists of values), strings, numbers, booleans, and null.
+                                                                                              
+                                                                                              Array: An array is a data structure that stores a collection of elements, typically of the same type, in a contiguous block of memory. In programming, arrays are commonly used to store lists of items that can be accessed by index.
+                                                                                              
+                                                                                              Here's what's happening:
+                                                                                              
+                                                                                              row_to_json(array_row): This function converts each row of the result set (array_row) into a JSON object.
+                                                                                              array_agg(): This function aggregates the JSON objects generated by row_to_json() into an array.
+                                                                                              array_to_json(): This function converts the aggregated array into a JSON array.
+                                                                                              COALESCE(): This function returns the first non-null value among its arguments. If the result of array_to_json(array_agg()) is null (i.e., the result set is empty), it returns an empty JSON array [].
+                                                                                              So, the entire subquery converts the result set of the provided SQL template into a JSON array, where each row of the result set is represented as a JSON object within the array. This can be useful for applications that expect data in JSON format or for easier data manipulation and transmission in modern web development contexts.
+
+
+                                                                                              this is further calling calling template
+                                                                                              
+                                                                                                def template(self,*args):
+                                                                                                  pathing = list((app.root_path,'db','sql',) + args)
+                                                                                                  pathing[-1] = pathing[-1] + ".sql"
+                                                                                              
+                                                                                                  template_path = os.path.join(*pathing)
+                                                                                              
+                                                                                                  green = '\033[92m'
+                                                                                                  no_color = '\033[0m'
+                                                                                                  print("\n")
+                                                                                                  print(f'{green} Load SQL Template: {template_path} {no_color}')
+                                                                                              
+                                                                                                  with open(template_path, 'r') as f:
+                                                                                                    template_content = f.read()
+                                                                                                  return template_content
+                                                                                              
+                                                                                              Now what this template do when called?
+                                                                                              
+                                                                                              It constructs a file path by concatenating app.root_path, 'db', 'sql', and the arguments provided (args). These are converted to a list and then combined.
+                                                                                              It appends the file extension .sql to the last element of the pathing list.
+                                                                                              It joins the elements of the pathing list to form the complete file path using os.path.join().
+                                                                                              It prints a message indicating the SQL template file being loaded.
+                                                                                              It opens the file specified by template_path in read mode and reads its contents into the template_content variable.
+                                                                                              Finally, it returns the content of the SQL template file.
+
+
+
+  my_user    = next((item for item in users if item["handle"] == 'andrewbrown'), None)
+  other_user = next((item for item in users if item["handle"] == 'bayko'), None)
+  results = {
+    'my_user': my_user,
+    'other_user': other_user
+  }
+  print('get_user_uuids')
+  print(results)
+  return results
+
+#This code searches for users with handles 'andrewbrown' and 'bayko' in the list users, creates a dictionary named results with the found user information, prints the dictionary, and finally returns it.
+
+
+
+
+
+def create_message_group(client,message_group_uuid, my_user_uuid, last_message_at=None, message=None, other_user_uuid=None, other_user_display_name=None, other_user_handle=None):
+  table_name = 'cruddur-messages'
+  record = {
+    'pk':   {'S': f"GRP#{my_user_uuid}"},
+    'sk':   {'S': last_message_at},
+    'message_group_uuid': {'S': message_group_uuid},
+    'message':  {'S': message},
+    'user_uuid': {'S': other_user_uuid},
+    'user_display_name': {'S': other_user_display_name},
+    'user_handle': {'S': other_user_handle}
+  }
+
+  response = client.put_item(
+    TableName=table_name,
+    Item=record
+  )
+  print(response)
+
+#Put Item Operation: The client.put_item() method is used to insert the record into the DynamoDB table specified by table_name. It takes the table name and the record dictionary as parameters.
+
+
+
+def create_message(client,message_group_uuid, created_at, message, my_user_uuid, my_user_display_name, my_user_handle):
+  table_name = 'cruddur-messages'
+  record = {
+    'pk':   {'S': f"MSG#{message_group_uuid}"},
+    'sk':   {'S': created_at },
+    'message_uuid': { 'S': str(uuid.uuid4()) },
+    'message': {'S': message},
+    'user_uuid': {'S': my_user_uuid},
+    'user_display_name': {'S': my_user_display_name},
+    'user_handle': {'S': my_user_handle}
+  }
+  # insert the record into the table
+  response = client.put_item(
+    TableName=table_name,
+    Item=record
+  )
+  # print the response
+  print(response)
+
+message_group_uuid = "5ae290ed-55d1-47a0-bc6d-fe2bc2700399" 
+now = datetime.now(timezone.utc).astimezone()
+users = get_user_uuids()
+
+
+create_message_group(
+  client=ddb,
+  message_group_uuid=message_group_uuid,
+  my_user_uuid=users['my_user']['uuid'],
+  other_user_uuid=users['other_user']['uuid'],
+  other_user_handle=users['other_user']['handle'],
+  other_user_display_name=users['other_user']['display_name'],
+  last_message_at=now.isoformat(),
+  message="this is a filler message"
+)
+
+create_message_group(
+  client=ddb,
+  message_group_uuid=message_group_uuid,
+  my_user_uuid=users['other_user']['uuid'],
+  other_user_uuid=users['my_user']['uuid'],
+  other_user_handle=users['my_user']['handle'],
+  other_user_display_name=users['my_user']['display_name'],
+  last_message_at=now.isoformat(),
+  message="this is a filler message"
+)
+
+conversation = """
+Person 1: Have you ever watched Babylon 5? It's one of my favorite TV shows!
+Person 2: Yes, I have! I love it too. What's your favorite season?
+Person 1: I think my favorite season has to be season 3. So many great episodes, like "Severed Dreams" and "War Without End."
+Person 2: Yeah, season 3 was amazing! I also loved season 4, especially with the Shadow War heating up and the introduction of the White Star.
+Person 1: Agreed, season 4 was really great as well. I was so glad they got to wrap up the storylines with the Shadows and the Vorlons in that season.
+Person 2: Definitely. What about your favorite character? Mine is probably Londo Mollari.
+
+"""
+
+
+lines = conversation.lstrip('\n').rstrip('\n').split('\n')
+for i in range(len(lines)):
+  if lines[i].startswith('Person 1: '):
+    key = 'my_user'
+    message = lines[i].replace('Person 1: ', '')
+  elif lines[i].startswith('Person 2: '):
+    key = 'other_user'
+    message = lines[i].replace('Person 2: ', '')
+  else:
+    print(lines[i])
+    raise 'invalid line'
+
+  created_at = (now + timedelta(minutes=i)).isoformat()
+  create_message(
+    client=ddb,
+    message_group_uuid=message_group_uuid,
+    created_at=created_at,
+    message=message,
+    my_user_uuid=users[key]['uuid'],
+    my_user_display_name=users[key]['display_name'],
+    my_user_handle=users[key]['handle']
+  )
+```
+
 
   
 
@@ -240,12 +492,52 @@ Result:
 
 ```
 
+List-tables script:
+The code is similar to get-converstaions so just writing the query
+
+```
+query_params = {
+  'TableName': table_name,
+  'KeyConditionExpression': 'pk = :pk AND begins_with(sk,:year)',
+  'ScanIndexForward': False,
+  'ExpressionAttributeValues': {
+    ':year': {'S': year },
+    ':pk': {'S': f"GRP#{my_user_uuid}"}
+  },
+  'ReturnConsumedCapacity': 'TOTAL'
+}
+
+# query the table 
+response = dynamodb.query(**query_params)
+
+# print the items returned by the query
+print(json.dumps(response, sort_keys=True, indent=2))
+```
+
+Sample table:
+```
+|      pk          |       sk          |  message_group_uuid  |
+|-------------------------------------------------------------|
+|  MSG#group1      |   2023#item1      |       group_uuid_1   |
+|  MSG#group1      |   2023#item2      |       group_uuid_1   |
+|  MSG#group1      |   2024#item1      |       group_uuid_1   |
+|  MSG#group1      |   2024#item2      |       group_uuid_1   |
+|  MSG#group2      |   2023#item1      |       group_uuid_2   |
+|  MSG#group2      |   2024#item1      |       group_uuid_2   |
+
+```
+
+Result:
+```
+|      pk          |       sk          |  message_group_uuid  |
+|-------------------------------------------------------------|
+|  MSG#group1      |   2024#item1      |       group_uuid_1   |
+|  MSG#group1      |   2024#item2      |       group_uuid_1   |
+
+```
 
 
-
-
-
-  
+In DynamoDB, each item's partition key (pk) must be unique within the table. Unlike the sort key (sk), which can have duplicate values within a partition key, the partition key itself must be unique across all items in the table.  
 
   
 Added the following snippet in gitpod.yml
@@ -262,7 +554,9 @@ Made the drop file of psql by adding IF EXISTS to the statement:
 psql $NO_DB_CONNECTION_URL -c "DROP DATABASE IF EXISTS cruddur;"
 ```
     
-- created ddb.py in backend-flask/lib, and began implementing code to it. 
+- created ddb.py in backend-flask/lib, and began implementing code to it.
+
+
 > Understood the difference between the Postgres database in db.py and what we’re implementing in ddb.py. In the Postgres database, we are doing initialization,
 > using a constructor to create an instance of the class, and in ddb.py it’s a stateless class. If you can do things without state, it’s much easier for testing,
 > as you just test the inputs and outputs, using simple data structures.
