@@ -882,15 +882,181 @@ for handle, sub in users.items():
   
   
 We then edited our definition of data_message_groups in app.py by using some code from our /api/activities/home route. 
->This route (/api/message_groups) returns data about message groups. When accessed, it verifies the provided access token to confirm the user's identity. If >authenticated, it retrieves message group data associated with the user from the backend. If there are no errors, it returns the message group data; otherwise, it >returns an error status code.
+
+```
+@app.route("/api/message_groups", methods=['GET'])   #This line of code decorates the data_message_groups function with a Flask route. It specifies that the function should be called when a GET request is made to the "/api/message_groups" URL.
+def data_message_groups():
+  access_token = extract_access_token(request.headers)        #Here, the code calls a function extract_access_token() to retrieve the access token from the headers of the incoming request.
+
+
+                                                                                       def extract_access_token(request_headers):
+                                                                                          access_token = None    #This line initializes the variable access_token to None. This variable will be used to store the access token extracted from the Authorization header.
+                                                                                          auth_header = request_headers.get("Authorization")  #This line retrieves the value of the "Authorization" header from the request_headers dictionary using the get() method. If the "Authorization" header is not present in request_headers, auth_header will be None.
+                                                                                          if auth_header and " " in auth_header:
+                                                                                              _, access_token = auth_header.split()
+                                                                                          return access_token
+
+
+
+
+
+
+  try:
+    claims = cognito_jwt_token.verify(access_token)    #This part attempts to verify the extracted access token using a method verify() provided by cognito_jwt_token
+
+                                                                                                                def verify(self, token, current_time=None):
+                                                                                                                    """ https://github.com/awslabs/aws-support-tools/blob/master/Cognito/decode-verify-jwt/decode-verify-jwt.py """
+                                                                                                                    if not token:
+                                                                                                                        raise TokenVerifyError("No token provided")
+                                                                                                            
+                                                                                                                    headers = self._extract_headers(token)
+                                                                                                                    pkey_data = self._find_pkey(headers)
+                                                                                                                    self._verify_signature(token, pkey_data)
+                                                                                                            
+                                                                                                                    claims = self._extract_claims(token)
+                                                                                                                    self._check_expiration(claims, current_time)
+                                                                                                                    self._check_audience(claims)
+                                                                                                            
+                                                                                                                    self.claims = claims 
+                                                                                                                    return claims
+
+    # authenicatied request
+    app.logger.debug("authenicated")
+    app.logger.debug(claims)
+    cognito_user_id = claims['sub']    #If the request is authenticated, the user's cognito user ID is extracted from the claims.
+    model = MessageGroups.run(cognito_user_id=cognito_user_id)
+
+
+
+                                                                                          from datetime import datetime, timedelta, timezone
+                                                                                          
+                                                                                          from lib.ddb import Ddb
+                                                                                          from lib.db import db
+                                                                                          
+                                                                                          class MessageGroups:
+                                                                                            def run(cognito_user_id):
+                                                                                              model = {
+                                                                                                'errors': None,
+                                                                                                'data': None
+                                                                                              }
+                                                                                          
+                                                                                              sql = db.template('users','uuid_from_cognito_user_id')
+                                                                                                                                                                SELECT
+                                                                                                                                                                  users.uuid
+                                                                                                                                                                FROM public.users
+                                                                                                                                                                WHERE 
+                                                                                                                                                                  users.cognito_user_id = %(cognito_user_id)s
+                                                                                                                                                                LIMIT 1
+
+
+
+                                                                                              my_user_uuid = db.query_value(sql,{
+                                                                                                'cognito_user_id': cognito_user_id
+                                                                                              })
+
+
+                                                                                                                                    
+                                                                                          
+                                                                                              print(f"UUID: {my_user_uuid}")
+                                                                                          
+                                                                                              ddb = Ddb.client()
+                                                                                              data = Ddb.list_message_groups(ddb, my_user_uuid)  #It calls the list_message_groups method of the Ddb class instance to retrieve the message groups associated with the user's UUID from DynamoDB.
+                                                                                              print("list_message_groups:",data)
+                                                                                          
+                                                                                              model['data'] = data
+                                                                                              return model
+
+
+
+
+
+
+    if model['errors'] is not None:
+      return model['errors'], 422
+    else:
+      return model['data'], 200
+  except TokenVerifyError as e:
+    # unauthenicatied request
+    app.logger.debug(e)
+    return {}, 401
+```
+
+
+>This route (/api/message_groups) returns data about message groups. When accessed, it verifies the provided access token to confirm the user's identity. If >authenticated, it retrieves message group data associated with the user from the backend. If there are no errors, it returns the message group data; otherwise, it
+>returns an error status code.
    
 After this, we next moved on to replace the mock data we had in message_groups.py and replaced it with a query to our Dynamo DB.
+
+```
+from datetime import datetime, timedelta, timezone
+from lib.ddb import Ddb
+from lib.db import db
+
+class Messages:
+  def run(message_group_uuid,cognito_user_id):
+    model = {
+      'errors': None,
+      'data': None
+    }
+
+    sql = db.template('users','uuid_from_cognito_user_id')
+    my_user_uuid = db.query_value(sql,{
+      'cognito_user_id': cognito_user_id
+    })
+
+    print(f"UUID: {my_user_uuid}")
+
+    ddb = Ddb.client()
+    data = Ddb.list_messages(ddb, message_group_uuid)
+    print("list_messages")
+    print(data)
+
+    model['data'] = data
+```
+
 > When its run method is called with a cognito_user_id, it retrieves the user's UUID using a SQL query. Then, it uses a DynamoDB client to list message groups
 > associated with that UUID. The retrieved data is stored in a model dictionary, which is then returned.
   
-  
 For this, we created a new folder inside backend-flask/db/sql named users, then a new SQL file named uuid_from_handle.sql.   
+
+
+
+
 After this, we updated HomeFeedPage.js, MessageGroupsPage.js, MessageGroupPage.js, and MessageForm.js to include authorization headers we just created. 
+
+```
+import { Auth } from 'aws-amplify'; #The Auth object provides methods for authentication and user management in AWS Amplify applications.
+
+const checkAuth = async (setUser) => {          #This code defines an asynchronous function named checkAuth. It takes one parameter, setUser, which appears to be a function used to set user data
+
+  Auth.currentAuthenticatedUser({               #This code calls the currentAuthenticatedUser method of the Auth object with an optional parameter bypassCache set to false. This parameter specifies whether to bypass the local cache and fetch the latest user data from Cognito.
+
+    // Optional, By default is false. 
+    // If set to true, this call will send a 
+    // request to Cognito to get the latest user data
+    bypassCache: false 
+  })
+  .then((user) => {                            #This code handles the promise returned by currentAuthenticatedUser method. If the promise is resolved successfully, it logs the user object to the console and then calls currentAuthenticatedUser again without any parameters.
+    console.log('user',user);
+
+    return Auth.currentAuthenticatedUser()   #This code handles the promise returned by the second call to currentAuthenticatedUser. If successful, it sets the user data by calling the setUser function with an object containing display_name and handle properties extracted from the cognito_user object.
+
+  }).then((cognito_user) => {
+      setUser({
+        display_name: cognito_user.attributes.name,
+        handle: cognito_user.attributes.preferred_username
+      })
+  })
+  .catch((err) => console.log(err));          #This code handles any errors that occur during the promise chain and logs them to the console.
+};
+
+export default checkAuth;
+```
+
+
+
+# In summary, this code defines a function checkAuth that checks if a user is authenticated using AWS Cognito. If the user is authenticated, it retrieves user data and sets it using the provided setUser function. Any errors encountered during this process are logged to the console.
+
   
 Moving on we pulled CheckAuth and defined it in it’s own file, frontend-react-js/src/lib/CheckAuth.js.
 - It asynchronously checks if a user is authenticated using AWS Cognito's Amplify library.
@@ -900,7 +1066,7 @@ Moving on we pulled CheckAuth and defined it in it’s own file, frontend-react-
   
 We updated our HomeFeedPage.js, MessageGroupsPage.js, MessageGroupPage.js, and MessageForm.js to use setUser, which we defined in CheckAuth.
   
->The setUser function is a state updater function provided by React's useState hook. In the context of the HomePage component, setUser is responsible for updating >the user state variable.
+>The setUser function is a state updater function provided by React's useState hook. In the context of the HomePage component, setUser is responsible for updating the user state variable.
   
 - Add our AWS_ENDPOINT_URL variable to our docker-compose.yml file.
 
@@ -911,6 +1077,10 @@ We updated our HomeFeedPage.js, MessageGroupsPage.js, MessageGroupPage.js, and M
 ![messagegrouppage](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8df4378d-e622-434a-b772-fea69df113f6)
   
 Updated this in our MessageGroupPage.js file.
+
+
+
+
 
 
 >We next moved onto making our message group definition a little more strict. In ddb.py, we updated the KeyConditionExpression with what we listed in our 
