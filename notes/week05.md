@@ -539,6 +539,7 @@ Result:
 
 In DynamoDB, each item's partition key (pk) must be unique within the table. Unlike the sort key (sk), which can have duplicate values within a partition key, the partition key itself must be unique across all items in the table.  
 
+
   
 Added the following snippet in gitpod.yml
 ```yml
@@ -547,14 +548,187 @@ Added the following snippet in gitpod.yml
       cd backend-flask
       pip install -r requirements.txt
 ```
+
   
   
 Made the drop file of psql by adding IF EXISTS to the statement:
 ```
 psql $NO_DB_CONNECTION_URL -c "DROP DATABASE IF EXISTS cruddur;"
 ```
+
     
 - created ddb.py in backend-flask/lib, and began implementing code to it.
+
+
+```
+import boto3
+import sys
+from datetime import datetime, timedelta, timezone
+import uuid
+import os
+import botocore.exceptions
+
+class Ddb:                                            
+  def client():
+    endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+    if endpoint_url:
+      attrs = { 'endpoint_url': endpoint_url }
+    else:
+      attrs = {}
+    dynamodb = boto3.client('dynamodb',**attrs)
+    return dynamodb
+
+  def list_message_groups(client,my_user_uuid):
+    year = str(datetime.now().year)
+    table_name = 'cruddur-messages'
+    query_params = {
+      'TableName': table_name,
+      'KeyConditionExpression': 'pk = :pk AND begins_with(sk,:year)',
+      'ScanIndexForward': False,
+      'Limit': 20,
+      'ExpressionAttributeValues': {
+        ':year': {'S': year },
+        ':pk': {'S': f"GRP#{my_user_uuid}"}
+      }
+    }
+    print('query-params:',query_params)
+    print(query_params)
+    # query the table
+    response = client.query(**query_params)
+    items = response['Items']
+    
+
+    results = []
+    for item in items:
+      last_sent_at = item['sk']['S']
+      results.append({
+        'uuid': item['message_group_uuid']['S'],
+        'display_name': item['user_display_name']['S'],
+        'handle': item['user_handle']['S'],
+        'message': item['message']['S'],
+        'created_at': last_sent_at
+      })
+    return results
+  def list_messages(client,message_group_uuid):
+    year = str(datetime.now().year)
+    table_name = 'cruddur-messages'
+    query_params = {
+      'TableName': table_name,
+      'KeyConditionExpression': 'pk = :pk AND begins_with(sk,:year)',
+      'ScanIndexForward': False,
+      'Limit': 20,
+      'ExpressionAttributeValues': {
+        ':year': {'S': year },
+        ':pk': {'S': f"MSG#{message_group_uuid}"}
+      }
+    }
+
+    response = client.query(**query_params)
+    items = response['Items']
+    items.reverse()
+    results = []
+    for item in items:
+      created_at = item['sk']['S']
+      results.append({
+        'uuid': item['message_uuid']['S'],
+        'display_name': item['user_display_name']['S'],
+        'handle': item['user_handle']['S'],
+        'message': item['message']['S'],
+        'created_at': created_at
+      })
+    return results
+  def create_message(client,message_group_uuid, message, my_user_uuid, my_user_display_name, my_user_handle):
+    now = datetime.now(timezone.utc).astimezone().isoformat()
+    created_at = now
+    message_uuid = str(uuid.uuid4())
+
+    record = {
+      'pk':   {'S': f"MSG#{message_group_uuid}"},
+      'sk':   {'S': created_at },
+      'message': {'S': message},
+      'message_uuid': {'S': message_uuid},
+      'user_uuid': {'S': my_user_uuid},
+      'user_display_name': {'S': my_user_display_name},
+      'user_handle': {'S': my_user_handle}
+    }
+    # insert the record into the table
+    table_name = 'cruddur-messages'
+    response = client.put_item(
+      TableName=table_name,
+      Item=record
+    )
+    # print the response
+    print(response)
+    return {
+      'message_group_uuid': message_group_uuid,
+      'uuid': my_user_uuid,
+      'display_name': my_user_display_name,
+      'handle':  my_user_handle,
+      'message': message,
+      'created_at': created_at
+    }
+  def create_message_group(client, message,my_user_uuid, my_user_display_name, my_user_handle, other_user_uuid, other_user_display_name, other_user_handle):
+    print('== create_message_group.1')
+    table_name = 'cruddur-messages'
+
+    message_group_uuid = str(uuid.uuid4())
+    message_uuid = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).astimezone().isoformat()
+    last_message_at = now
+    created_at = now
+    print('== create_message_group.2')
+
+    my_message_group = {
+      'pk': {'S': f"GRP#{my_user_uuid}"},
+      'sk': {'S': last_message_at},
+      'message_group_uuid': {'S': message_group_uuid},
+      'message': {'S': message},
+      'user_uuid': {'S': other_user_uuid},
+      'user_display_name': {'S': other_user_display_name},
+      'user_handle':  {'S': other_user_handle}
+    }
+
+    print('== create_message_group.3')
+    other_message_group = {
+      'pk': {'S': f"GRP#{other_user_uuid}"},
+      'sk': {'S': last_message_at},
+      'message_group_uuid': {'S': message_group_uuid},
+      'message': {'S': message},
+      'user_uuid': {'S': my_user_uuid},
+      'user_display_name': {'S': my_user_display_name},
+      'user_handle':  {'S': my_user_handle}
+    }
+
+    print('== create_message_group.4')
+    message = {
+      'pk':   {'S': f"MSG#{message_group_uuid}"},
+      'sk':   {'S': created_at },
+      'message': {'S': message},
+      'message_uuid': {'S': message_uuid},
+      'user_uuid': {'S': my_user_uuid},
+      'user_display_name': {'S': my_user_display_name},
+      'user_handle': {'S': my_user_handle}
+    }
+
+    items = {
+      table_name: [
+        {'PutRequest': {'Item': my_message_group}},
+        {'PutRequest': {'Item': other_message_group}},
+        {'PutRequest': {'Item': message}}
+      ]
+    }
+
+    try:
+      print('== create_message_group.try')
+      # Begin the transaction
+      response = client.batch_write_item(RequestItems=items)
+      return {
+        'message_group_uuid': message_group_uuid
+      }
+    except botocore.exceptions.ClientError as e:
+      print('== create_message_group.error')
+      print(e)
+```
 
 
 > Understood the difference between the Postgres database in db.py and what we’re implementing in ddb.py. In the Postgres database, we are doing initialization,
@@ -571,12 +745,132 @@ psql $NO_DB_CONNECTION_URL -c "DROP DATABASE IF EXISTS cruddur;"
 export AWS_COGNITO_USER_POOL_ID="us-east-1_xxxx"
 gp env AWS_COGNITO_USER_POOL_ID="us-east-1_xxxx"
 ```
+
+```
+#!/usr/bin/env python3
+
+import boto3
+import os
+import json
+
+userpool_id = os.getenv("AWS_COGNITO_USER_POOL_ID")
+client = boto3.client('cognito-idp')
+params = {
+  'UserPoolId': userpool_id,
+  'AttributesToGet': [
+      'preferred_username',
+      'sub'
+  ]
+}
+response = client.list_users(**params)
+users = response['Users']
+
+print(json.dumps(users, sort_keys=True, indent=2, default=str))
+
+dict_users = {}
+for user in users:
+  attrs = user['Attributes']
+  sub    = next((a for a in attrs if a["Name"] == 'sub'), None)
+  handle = next((a for a in attrs if a["Name"] == 'preferred_username'), None)
+  dict_users[handle['Value']] = sub['Value']
+
+print(json.dumps(dict_users, sort_keys=True, indent=2, default=str))
+```
+
   
 - Updated AWS_COGNITO_USER_POOL_ID in docker-compose.yml to use the variable that was saved. Ran the file for list-users.
   ![list-users](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/47f263e7-47f7-4e0a-bf00-09ce9ce9634b)
   
   
 - Under bin/db created update_cognito_user_ids.
+
+```
+
+
+
+#!/usr/bin/env python3
+
+import boto3
+import os
+import sys
+
+print("== db-update-cognito-user-ids")
+
+current_path = os.path.dirname(os.path.abspath(__file__))
+parent_path = os.path.abspath(os.path.join(current_path, '..', '..'))
+sys.path.append(parent_path)
+from lib.db import db
+
+def update_users_with_cognito_user_id(handle,sub):
+  sql = """
+    UPDATE public.users
+    SET cognito_user_id = %(sub)s
+    WHERE
+      users.handle = %(handle)s;
+  """
+
+  db.query_commit(sql,{          -------> this function is taking the above sql which updates the cognito_user_id in users table
+    'handle' : handle,
+    'sub' : sub
+  })
+                                                                                                                                      def query_commit(self,sql,params={}):
+                                                                                                                                        self.print_sql('commit with returning',sql,params)
+                                                                                                                                      
+                                                                                                                                        pattern = r"\bRETURNING\b"
+                                                                                                                                        is_returning_id = re.search(pattern, sql)
+                                                                                                                                      
+                                                                                                                                        try:
+                                                                                                                                          with self.pool.connection() as conn:
+                                                                                                                                            cur =  conn.cursor()
+                                                                                                                                            cur.execute(sql,params)
+                                                                                                                                            if is_returning_id:
+                                                                                                                                              returning_id = cur.fetchone()[0]
+                                                                                                                                            conn.commit() 
+                                                                                                                                            if is_returning_id:
+                                                                                                                                              return returning_id
+                                                                                                                                        except Exception as err:
+                                                                                                                                          self.print_sql_err(err)
+The query in this case doesn't contain a RETURNING clause, so the is_returning_id variable will be None, and the code won't fetch any ID after executing this query. It simply updates records in the public.users table based on the provided parameters (sub and handle).
+
+
+                                                                                              
+def get_cognito_user_ids():
+  userpool_id = os.getenv("AWS_COGNITO_USER_POOL_ID")
+
+#https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp/client/list_users.html
+
+  client = boto3.client('cognito-idp')
+  params = {
+    'UserPoolId': userpool_id,
+    'AttributesToGet': [
+        'preferred_username',
+        'sub'
+    ]
+  }
+  response = client.list_users(**params)              ** is used when passing number of arguments
+
+  users = response['Users']
+  dict_users = {}
+  for user in users:
+    attrs = user['Attributes']
+    sub    = next((a for a in attrs if a["Name"] == 'sub'), None)
+    handle = next((a for a in attrs if a["Name"] == 'preferred_username'), None)
+    dict_users[handle['Value']] = sub['Value']
+  return dict_users
+
+
+users = get_cognito_user_ids()
+
+for handle, sub in users.items():
+  print('----',handle,sub)
+  update_users_with_cognito_user_id(
+    handle=handle,
+    sub=sub
+  )
+
+
+
+```
 > The sql command is updating our public.users table setting the cognito user id based on the sub we passed in. We then run a query commit to execute it. Further 
 > down in the code, we’re doing the same thing that we did in list-users, but instead of printing the data, we’re returning it. Before we can do that, we have to 
 > seed our data. We add a path to our setup file for update_cognito_user_ids. We run ./bin/db/setup, but get an error on that path, so instead we run 
