@@ -1,4 +1,4 @@
-![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/64cedda0-bd38-4d59-8a3a-e509e2d8b782)# This week we learned about Postgres and RDS.
+# This week we learned about Postgres and RDS.
 
 https://www.postgresql.org/
 
@@ -31,15 +31,15 @@ aws rds create-db-instance \
   --no-deletion-protection
 ```
 
+![Screenshot 2024-01-07 012855](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/310be661-c594-4afa-b207-112c8df2f403)
 
 ![amazon-postgress](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/d665c087-5a6b-403d-8fad-8aee64dfd0d4)
 
- to connect to Postgres locally, use this command:
+To connect to Postgres locally, use this command:
 
 psql -Upostgres --host localhost
 After entering our credentials to access the account
 
-  
 PSQL commands.
   
 ```
@@ -67,6 +67,9 @@ Created a database named “cruddur”.
 ```
 CREATE database cruddur;
 ```
+
+![Screenshot 2024-01-07 022940](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/92f067a2-5530-4e48-9429-252ac03b055f)
+
   
 Setup tables for the database. 
 In other languages like Ruby on Rails, they have a schema that defines the entire database.
@@ -80,6 +83,317 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 ```
 
   
+After this, from our postgres:bash terminal, we ran:
+
+```
+psql cruddur < db/schema.sql -h localhost -U postgres
+```
+
+This created the extension needed. To make doing this easier, we created a connection url string for our local database.
+```
+export CONNECTION_URL="postgresql://postgres:thisisntmypassword@localhost:5432/cruddur"
+gp env export CONNECTION_URL="postgresql://postgres:thisisntmypassword@localhost:5432/cruddur"
+```
+
+The format for a connection url string for a Postgres database is the following:
+
+```
+postgresql://[user[:password]@][netlocation][:port][/dbname][?parameter1=value1]
+```
+
+We then created a new folder in ‘backend-flask’ named ‘bin’ which stands for binary. In this folder, we can store batch scripts to execute commands for our database. We then made several new files: db-create, db-drop, db-schema-load
+
+![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/c277445d-9412-4dc8-83b4-82480b14337c)
+
+For the files, each one needs a shebang. The shebang tells our app how to treat this file. Since we want it to run as bash, we added:
+
+```
+#! /user/bin/bash
+```
+
+We started off testing if we can drop our database. So to do this, we add a line to db-drop.
+```
+psql $CONNECTION_URL -c "drop database cruddur;'
+```
+
+
+This command should psql connect to our local Postgres database using our connection string url, then using ‘-c’ it issues a SQL command of “drop database cruddur;”
+
+We run db-drop from our terminal and it gives us permission denied. This is because the file is not executable by default. To make it or any file executable after creation, we have to run an additional command for it:
+
+```
+chmod u+x <filename>
+```
+
+
+We run this to make our file executable, then do the same for our remaining batch scripts. 
+We again test our batch script and get an error letting us know that we cannot drop the currently open database.
+Since we’re going to be working with this frequently, we need to replace part of our CONNECTION_URL, so we’re not using the database when trying to drop it. 
+
+To do this, we must use sed. Sed is a text stream editor used on Unix systems to edit files quickly and efficiently. The tool searches through, replaces, adds, and deletes lines in a text file without opening the file in a text editor. We use sed, then wrap it in an environment variable.
+
+
+```
+#! /usr/bin/bash
+
+echo "db-drop"
+
+NO_DB_CONNECTION_URL=$(sed 's/\/cruddur//g' <<<"$CONNECTION_URL")
+psql $NO_DB_CONNECTION_URL -c "DROP database cruddur;"
+```
+
+
+We then go through and do the same for our db-create, passing a different SQL command.
+
+```
+#! /usr/bin/bash
+
+echo "db-create"
+
+NO_DB_CONNECTION_URL=$(sed 's/\/cruddur//g' <<<"$CONNECTION_URL")
+psql $NO_DB_CONNECTION_URL -c "CREATE database cruddur;"
+```
+
+We move onto db-schema-load, and add a different command to connect to our database. Since it runs relative to where we’re executing, we use realpath. The realpath will tell us the actual path of the file.
+
+```
+#! /usr/bin/bash
+
+echo "db-schema-load"
+
+schema_path="$(realpath .)/db/schema.sql"
+echo $schema_path
+
+psql $CONNECTION_URL cruddur < $schema_path
+```
+
+
+We need a way to determine when we’re running from our production environment (prod) or our local Postgres environment. To do this, we added an if statement to the code.
+
+```
+#! /usr/bin/bash
+
+CYAN='\033[1;36m'
+NO_COLOR='\033[0m'
+LABEL="db-schema-load"
+printf "${CYAN}== ${LABEL}${NO_COLOR}\n"
+
+schema_path="$(realpath .)/db/schema.sql"
+echo $schema_path
+
+if [ "$1" = "prod" ]; then
+  echo "Running in production mode"
+  URL=$PROD_CONNECTION_URL
+else
+  URL=$CONNECTION_URL
+fi
+
+psql $URL cruddur < $schema_path
+```
+
+The additional code under our shebang was also added to provide a different color through the CLI when viewing our Postgres logs, so we can see when this is being ran. We went through and added it to our other batch scripts as well.
+
+Back on our main task of adding tables to our database, we go back to our schema.sql, and add SQL commands to create our tables:
+
+```
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+DROP TABLE IF EXISTS public.users;
+DROP TABLE IF EXISTS public.activities;
+
+
+CREATE TABLE public.users (
+  uuid UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  display_name text,
+  handle text,
+  cognito_user_id text,
+  created_at TIMESTAMP default current_timestamp NOT NULL
+);
+
+CREATE TABLE public.activities (
+  uuid UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_uuid UUID NOT NULL,
+  message text NOT NULL,
+  replies_count integer DEFAULT 0,
+  reposts_count integer DEFAULT 0,
+  likes_count integer DEFAULT 0,
+  reply_to_activity_uuid integer,
+  expires_at TIMESTAMP,
+  created_at TIMESTAMP default current_timestamp NOT NULL
+);
+```
+
+
+We then made a new batch script named ‘db-connect’, made it executable by running ‘chmod u+x ./bin/db-connect’ then ran the file we just created.
+
+```
+#! /usr/bin/bash
+
+psql $CONNECTION_URL
+```
+
+![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/766d8b8b-bcda-419a-84fa-aa498e01b4c7)
+
+
+We then created one more batch script named ‘db-seed’ and made it executable as well.
+
+```
+#! /usr/bin/bash
+
+CYAN='\033[1;36m'
+NO_COLOR='\033[0m'
+LABEL="db-seed"
+printf "${CYAN}== ${LABEL}${NO_COLOR}\n"
+
+seed_path="$(realpath .)/db/seed.sql"
+echo $seed_path
+
+if [ "$1" = "prod" ]; then
+  echo "Running in production mode"
+  URL=$PROD_CONNECTION_URL
+else
+  URL=$CONNECTION_URL
+fi
+
+psql $URL cruddur < $seed_path
+```
+
+
+
+This batch script will run our seed.sql file that we created in ‘backend-flask/db’.
+
+
+```
+-- this file was manually created
+INSERT INTO public.users (display_name, email, handle, cognito_user_id)
+VALUES
+  ('bhanumalhotra','cloudevops101@gmail.com', 'bhanumalhotra' ,'MOCK'),
+  ('bhanu', 'bhanumanaws@gmail.com', 'bhanuman','MOCK'),
+  ('Bhanu Malhotra','bhanumalhotra219@gmail.com', 'Bhanu', 'MOCK');
+
+INSERT INTO public.activities (user_uuid, message, expires_at)
+VALUES
+  (
+    (SELECT uuid from public.users WHERE users.handle = 'bhanumalhotra' LIMIT 1),
+    'This was imported as seed data!',
+    current_timestamp + interval '10 day'
+  )
+```
+
+
+When we test the ‘db-seed’ file, it works.
+![Screenshot 2024-01-07 202055](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/3c7a766c-0cd9-4c67-9c2d-71e84e3df56b)
+
+![Screenshot 2024-01-08 221125](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/4126fc22-482e-4178-bcf0-1c434baa95d7)
+
+
+
+We may need to see what connections are being used to our Postgres database. For this, we implement ‘db-sessions’ and make it executable.
+![Screenshot 2024-01-10 034045](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/9a05ca40-e900-48d2-b951-eca9935d0d90)
+
+
+
+```
+#! /usr/bin/bash
+CYAN='\033[1;36m'
+NO_COLOR='\033[0m'
+LABEL="db-sessions"
+printf "${CYAN}== ${LABEL}${NO_COLOR}\n"
+
+if [ "$1" = "prod" ]; then
+  echo "Running in production mode"
+  URL=$PROD_CONNECTION_URL
+else
+  URL=$CONNECTION_URL
+fi
+
+NO_DB_URL=$(sed 's/\/cruddur//g' <<<"$URL")
+psql $NO_DB_URL -c "select pid as process_id, \
+       usename as user,  \
+       datname as db, \
+       client_addr, \
+       application_name as app,\
+       state \
+from pg_stat_activity;"
+```
+
+When we run this, we’re able to see the active connections to our database, and close whatever connections we need to close.
+
+![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/f09e152a-ce56-43c3-8fa6-eb6e899b6885)
+
+We then drop our database by running ‘db-drop’ but decide we should create a command to run all of our commands, so we don’t have to run them invidivually. We create ‘db-setup’ and make it executable.
+
+```
+#! /usr/bin/bash
+-e # stop if it fails at any point
+
+CYAN='\033[1;36m'
+NO_COLOR='\033[0m'
+LABEL="db-setup"
+printf "${CYAN}==== ${LABEL}${NO_COLOR}\n"
+
+bin_path="$(realpath .)/bin"
+
+source "$bin_path/db-drop"
+source "$bin_path/db-create"
+source "$bin_path/db-schema-load"
+source "$bin_path/db-seed"
+```
+
+With that setup, now we could now install the Postgres driver in our Backend application. We’re going to use an AWS Lambda to to insert users into our database. Since AWS lacks the required PostgreSQL libraries in the AMI image, we must run the Postgres driver, custom compliled Psycopg2 C library for Python. To implement this, we add to our requirements.txt file.
+
+```
+psycopg[binary]
+psycopg[pool]
+```
+
+We then do a ‘pip install -r requirements.txt’ to install the driver.
+
+We’re going to have to use pooling as a way of dealing with connections to our database. There’s a certain amount of connections your database can handle in relational databases. There’s concurrent connections, where some are running, some aren’t. These connection pools allow us to re-use connections with concurrent connections.
+
+Since we’re running Lambda functions, if our app became widely popular, we’d need to use a proxy, as Lambda functions create new functions each time it’s ran, which could become expensive.
+
+To create our connection pool, we create a new file in ‘backend-flask/lib’ named ‘db.py’
+
+```
+# Importing the ConnectionPool class from the psycopg_pool module
+from psycopg_pool import ConnectionPool
+# Importing the os module to access environment variables
+import os
+
+# Function to wrap a SQL query result representing a single object
+def query_wrap_object(template):
+    # Constructing a SQL query to select a single object and convert it to JSON format
+    sql = f"""
+    -- This query selects a single object and converts it to JSON format.
+    -- The COALESCE function is used to handle cases where the result might be NULL, 
+    -- returning an empty JSON object '{}' in such cases.
+    (SELECT COALESCE(row_to_json(object_row),'{{}}'::json) FROM (
+    {template}   -- 'template' is a placeholder for the SQL query template provided as argument
+    ) object_row);
+    """
+    return sql
+
+# Function to wrap a SQL query result representing an array of objects
+def query_wrap_array(template):
+    # Constructing a SQL query to select an array of objects and convert it to JSON format
+    sql = f"""
+    -- This query selects an array of objects and converts it to JSON format.
+    -- The COALESCE function is used to handle cases where the result might be NULL, 
+    -- returning an empty JSON array '[]' in such cases.
+    (SELECT COALESCE(array_to_json(array_agg(row_to_json(array_row))),'[]'::json) FROM (
+    {template}   -- 'template' is a placeholder for the SQL query template provided as argument
+    ) array_row);  
+    """   
+    return sql
+
+# Retrieving the database connection URL from an environment variable named "CONNECTION_URL"
+connection_url = os.getenv("CONNECTION_URL")
+
+# Creating a connection pool using the ConnectionPool class with the provided connection URL
+pool = ConnectionPool(connection_url)
+
+```
+https://www.psycopg.org/psycopg3/docs/api/pool.html#:~:text=min_size%20(%20int%20%2C%20default%3A%204,connections%20the%20pool%20will%20hold.
 
 
 
