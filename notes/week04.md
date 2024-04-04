@@ -396,5 +396,173 @@ pool = ConnectionPool(connection_url)
 https://www.psycopg.org/psycopg3/docs/api/pool.html#:~:text=min_size%20(%20int%20%2C%20default%3A%204,connections%20the%20pool%20will%20hold.
 
 
+min_size ( int , default: 4) – The minimum number of connection the pool will hold. The pool will actively try to create new connections if some are lost (closed, broken) and will try to never go below min_size . max_size ( int , default: None ) – The maximum number of connections the pool will hold.
 
 
+
+We open docker-compose.yml and add an environment variable for our CONNECTION_URL.
+```
+CONNECTION_URL: "postgresql://postgres:password@localhost:5432/cruddur"
+```
+Next we open home_activities.py to import our connection pool, remove our mock data, and add our query to establish our connection.
+
+
+```
+from lib.db import pool, query_wrap_array
+
+...........................
+
+# Constructing a SQL query to select an array of objects representing activities
+# Joining the public.activities table with public.users table to get additional information about the user associated with each activity
+# Ordering the results by the creation timestamp of activities in descending order
+
+sql = query_wrap_array("""
+SELECT
+    activities.uuid,
+    users.display_name,
+    users.handle,
+    activities.message,
+    activities.replies_count,
+    activities.reposts_count,
+    activities.likes_count,
+    activities.reply_to_activity_uuid,
+    activities.expires_at,
+    activities.created_at
+FROM public.activities
+LEFT JOIN public.users ON users.uuid = activities.user_uuid
+ORDER BY activities.created_at DESC
+""")
+
+# Printing the constructed SQL query for debugging purposes
+print("SQL=========")    
+print(sql)
+print("SQL+++++++++")       
+
+# Establishing a connection to the database using the connection pool
+with pool.connection() as conn:
+    # Creating a cursor object to execute SQL queries
+    with conn.cursor() as cur:
+        # Executing the SQL query
+        cur.execute(sql)
+        # Fetching the result (which is expected to be a tuple containing JSON data)
+        # Note: This assumes that the SQL query returns a single row of JSON data
+        json = cur.fetchone()
+
+# Printing a delimiter for debugging purposes
+print("---------") 
+# Printing the JSON data extracted from the database result
+print(json[0])      
+# Returning the extracted JSON data
+return json[0]
+
+```
+
+
+This will fetch the data and return the results. Since we’re writing raw SQL, this will allows us to return json directly as well.
+
+After working through some SQL errors, we pointed our attention back towards RDS. We spin up our RDS database, then test connecting to it using the terminal.
+
+```
+psql $PROD_CONNECTION_URL
+```
+
+
+Since we have not setup access through the security group for our RDS yet, the connection hangs. We must get the IP address of our Gitpod environment, then give that to our security group in AWS. We manually setup an inbound rule in our security group through AWS.
+
+To do this, from the terminal, we run ‘curl ifonfig.me’ which outputs our Gitpod IP address. 
+
+We next passed GITPOD_IP=$(curl ifconfig.me) as variable so we can grab GITPOD_IP for RDS whenever needed. This allowed us to store our current IP address as an environment variable.
+
+We again test the ‘psql’ command above, this time it works. Since our IP is going to update everytime we launch our workspace, we will need to manually update that IP stored by the inbound rule everytime as well.
+
+There’s several env variables we then set after this, passing our security group id and our security group rule id as variables: DB_SG_ID and DB_SG_RULE_ID
+
+We also store our env var in ‘.gitpod.yml’ as well as create a new batch script named ‘rds-update-sg-rule’ to run every time our environment launches:
+
+
+```
+  - name: postgres
+    init: |
+      curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+      echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" |sudo tee  /etc/apt/sources.list.d/pgdg.list
+      sudo apt update
+      sudo apt install -y postgresql-client-13 libpq-dev      
+      sudo apt install -y postgresql-client-13 libpq-dev  
+    command: |
+      export GITPOD_IP=$(curl ifconfig.me)
+      source  "$THEIA_WORKSPACE_ROOT/backend-flask/bin/rds-update-sg-rule" 
+```
+
+```
+#! /usr/bin/bash
+
+CYAN='\033[1;36m'
+NO_COLOR='\033[0m'
+LABEL="rds-update-sg-rule"
+printf "${CYAN}== ${LABEL}${NO_COLOR}\n"
+
+aws ec2 modify-security-group-rules \
+    --group-id $DB_SG_ID \
+    --security-group-rules "SecurityGroupRuleId=$DB_SG_RULE_ID,SecurityGroupRule{Description=GITPOD,IpProtocol=tcp,FromPort=5432,ToPort=5432,CidrIpv4=$GITPOD_IP/32}"
+
+```
+
+![Screenshot 2024-01-10 043622](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/805798f3-12e4-4ae0-8dd3-db0be38300e1)
+
+
+After confirming connection to RDS from Gitpod, modified docker-compose.yml to pass a different env var for CONNECTION_URL.
+
+```
+CONNECTION_URL: "${PROD_CONNECTION_URL}"
+```
+
+The new variable didn’t work because we did not have a schema loaded. I then accessed backend-flask, then ran ‘./bin/db-schema-load prod’. This got rid of the ‘psycopg.errors.UndefinedTable: relation “public.activities” does not exist error’ we were receiving.
+
+When we load the webpage, it’s still blank, but this is because there’s no data. To create data, we need a user to sign up. When we sign up through Cognito, we need to create a record, which can be done through a Lambda.
+
+
+We setup the Lambda function through AWS, and needed to setup an environment variable for it. We created CONNECTION_URL, which was the PROD_CONNECTION_URL we set earlier through AWS CLI for Gitpod.
+
+Next we needed to add a layer for the function to interact with the Psycopg2 library, so we referenced https://github.com/jetbridge/psycopg2-lambda-layer where I found py 3.8 for my region (us-east-1), then inserted the ARN of the function into the console and verified: it’s compatible, so it was added to the function.
+
+Added Lambda function to our Cognito User pool through Cognito > User pools, then selecting our user pool. It’s a trigger type: sign-up, post confirmation trigger. I then selected the function we already configured as the function to use.
+
+
+Tested Lambda function by opening Cloudwatch logs, then going to Cognito and removing our existing user we created a couple weeks ago. We then attempted to recreate our user account through our site, but received a “PostConfirmation failed with error local variable ‘conn’ referenced before assignment.” error. Viewed Cloudwatch log for this error through the AWS console.
+
+The error indicates a problem with our code in the cruddur-post-confirmation.py we created earlier. Updated indentation to the Lambda function code, then copied new code to Lambda function and deployed the changes. Tried web site again, resending a new authentication code. This time, we received a new error.
+
+We updated our Lambda function again, this time removing conn = psycopg2.connect(os.getenv(‘CONNECTION_URL’)) and cur = conn.cursor() from ‘try’ and adding print commands to pass a string of “SQL Statement — -” and sql itself. We again went back to Cognito and removed our user, then signed up through the web site again. We again got a timeout error, but we knew this would happen. We just wanted to see what information is passing.
+
+After some corrections to syntax, we went back to Lambda and found that we needed to set a VPC for our function. To do this, we needed to set a permission for the lambda. We went to the Lambda Configuration, then selected Permissions, and selected the execution role. This redirected us to the IAM page under Roles for the function’s execution role. Add permissions/Attach policies > then found we needed to create a custom policy to allow Lambda to create a network interface to the db. We then attached the policy to our Lambda function through IAM to add the permissions.
+
+We again went back and created a VPC for our function, this time choosing our VPC, 2 subnets for better availability, and our default VPC security group.
+
+Back in Cognito, we again removed our user, then went back to our web app to test again. We again got the same error from our website. I find that Andrew did not, so I repeat the same steps: removed user from Cognito, then went back to our web app and created an account again. This time, I get the same response as Andrew. In the latest Cloudwatch log, we were now getting a syntax error.
+
+We reviewed our function once again, and after clearing up a few more syntax errors with our SQL command, we again tested. I came back with a successful new user created, but Andrew during the video got an error in regards to the email because his schema was not loaded. This led us into looking at our schema.sql file and editing the tables for public.users to not include NULL data, and we also reran the cmd to load the schema from the AWS CLI. “./bin/db-schema-load prod”
+
+Once more we tested our function by removing the user from Cognito, creating a new account through our web app, then again checking our Cloudwatch logs. This time, the user was successfully created without errors.
+
+To test this from the terminal, we selected our Postgres bash terminal in Gitpod, then connected to our production database: ./bin/db-connect prod. Once connected, we queried the users table: select * from users; > this returns 1 row, our newly created user account!
+
+
+
+
+![Screenshot 2024-01-11 032933](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/2227670b-c799-4601-be70-4da04502e8aa)
+![Screenshot 2024-01-11 033043](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/3416533a-da7c-4ecd-8691-b7430186204b)
+![Screenshot 2024-01-11 034456](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/d164693b-5e77-4789-851e-d9e98554830c)
+![Screenshot 2024-01-11 035501](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/308ac976-7edc-4517-807b-054e4825ff97)
+![Screenshot 2024-01-11 040013](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/0e146c8e-05f5-4b00-b44b-7c461d316e2e)
+
+
+![Screenshot 2024-01-11 061906](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/8087f99e-e581-4a94-ae9a-26a8ba757a2f)
+![Screenshot 2024-01-11 071121](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/05e051e6-b943-4bae-b14e-40f9046fe509)
+![Screenshot 2024-01-11 071403](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/b2f5311c-6223-4d95-acd7-835a67050e60)
+![Screenshot 2024-01-11 071553](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/63777f7a-b2f9-4390-8445-7e1a45950202)
+![Screenshot 2024-01-11 071702](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/c88f9c40-a8f3-4693-b6c2-da9a149b9791)
+![Screenshot 2024-01-11 200910](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/86f43185-0911-42a8-9c40-6596ab2f5c2f)
+![Screenshot 2024-01-11 201348](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/50d5191b-b999-4742-813e-04dc0e712d41)
+![Screenshot 2024-01-11 232836](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/a6bb4795-3af2-40ee-bffb-af9f5dafa414)
+
+![Screenshot 2024-01-11 232959](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/b3e8ff98-e953-4839-b651-a4295235fea3)
