@@ -3,6 +3,114 @@ The entire livestream was lecture material on data modelling and access patterns
 guest instructor this week, Mr. Kirk Kirkconnell( lead developer advocate for Momento Serverless Cache and a NoSQL Database specialist.)
   
 DynamoDB is a fully managed, serverless, NoSQL database designed to run high performance applications at any scale. It’s hosted by Amazon Web Services. 
+
+
+
+Data modelling - access patterns
+We started with a very insightful 2-hour live stream about data modelling. The design that was chosen for our database is a simple table design. It is a popular choice these days and works well in this kind of scenario where all data is closely linked together. Based on its name it sounds simple but turns out to be quite complicated in terms of data modelling. To get everything working and to keep the cost down, it is crucial to have your data mapped with all different access patterns.
+
+When designing a relational database you simply map the data in logical entities, see what data belongs together in each table and then figure out how to access the data from these tables by using joins. However, with DynamoDB you have to approach this from a completely different perspective. You have to think of your application and what data it is going to need and how. When you know your access patterns, you can start to think about how to organize your data. You can break the rules you would have with relational databases - data can even be duplicated if that works with your access patterns! Storage is cheap and you want your base table to support as many of your access patterns as possible so duplicating data could make sense depending on the situation. You could also choose to save some of the data as JSON instead of separate items if it's not going to be used in any of your queries.
+
+There are so many options for designing the data model for your database. To get the best results from DynamoDB in terms of cost-effectiveness and performance, you really need to do these initial steps correctly.
+
+Access patterns in our application
+Our application is a messaging app where the user is able to see a list of their conversations (message groups) and then click an individual message group and see all messages that belong to that message group. Additionally, the user is obviously able to send messages - these could be either completely new messages that start new message groups or further messages to existing message groups. Based on this it was possible to list our initial access patterns:
+
+- pattern A: showing a single conversation (message group).
+
+- pattern B: a list of conversations (message groups).
+
+- pattern C: create a new message
+
+- pattern D: add a message to an existing message group
+
+- pattern E: update a message group using DynamoDB streams
+
+So the database is going to have one table, which is going to contain messages and message groups. Each item is going to have a unique uuid among other fields such as date, display name and message content. Each message group is also going to be listed twice as two individual items, from the perspective of the two users who are parts of the conversation. This is because a list of conversations cannot be displayed identically to both users, the person who is looking at their message groups wants to see the name of the other user listed as a topic of that message group.
+
+Partition keys and sort keys
+Then we come to the hardest part of data modelling, choosing the partition key. Partition key means an identifier for the item and it dictates under which partition DynamoDB puts the item under the hood. The partition key doesn't have to be unique and several items can have the same partition key. Sort key instead allows you to uniquely identify that item and allows it to be sorted. The primary key in DynamoDB can be either a simple primary key or a composite primary key (a combination of partition key and sort key). A partition key is always obligatory for any query and only an equality operator can be used. The sort key is not obligatory and not using it would simply return everything.
+
+Our application has two access patterns that relate to messages and three that relate to message groups. For messages, we have to be able to write new messages and display the messages that belong to a certain message group. 
+
+The best option is to use message_group_uuid as the partition key and created_at as the sort key for it. This is quite logical as we want to display a single conversation, so its identifier uuid is the easiest way to access it. Using created_at as a sort key will give us the option to display the messages within certain timeframes:
+
+
+```
+ def create_message(client,message_group_uuid, message, my_user_uuid,                  my_user_display_name, my_user_handle):
+    now = datetime.now(timezone.utc).astimezone().isoformat()
+    created_at = now
+    message_uuid = str(uuid.uuid4())
+
+    record = {
+      'pk':   {'S': f"MSG#{message_group_uuid}"},
+      'sk':   {'S': created_at },
+      'message': {'S': message},
+      'message_uuid': {'S': message_uuid},
+      'user_uuid': {'S': my_user_uuid},
+      'user_display_name': {'S': my_user_display_name},
+      'user_handle': {'S': my_user_handle}
+    }
+```
+
+
+For message groups, it gets a little bit more complicated. We have to be able to list message groups, add messages to message groups and update message group details. As each user naturally needs to see the message groups that belong exactly to them, the logical option is to use my_user_uuid as the partition key. This will work well as there are two message groups for each conversation, so each participant is going to have a version of the message group with their user uuid. As we want to be able to sort the message groups based on date, the sort key is going to be last_message_at:
+
+
+
+ def create_message_group(client, message,my_user_uuid, my_user_display_name, my_user_handle, other_user_uuid, other_user_display_name, other_user_handle):
+    table_name = 'cruddur-messages'
+```
+    message_group_uuid = str(uuid.uuid4())
+    message_uuid = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).astimezone().isoformat()
+    last_message_at = now
+
+    my_message_group = {
+      'pk': {'S': f"GRP#{my_user_uuid}"},
+      'sk': {'S': last_message_at},
+      'message_group_uuid': {'S': message_group_uuid},
+      'message': {'S': message},
+      'user_uuid': {'S': other_user_uuid},
+      'user_display_name': {'S': other_user_display_name},
+      'user_handle':  {'S': other_user_handle}
+    }
+```
+The catch is that the value of the sort key will of course have to be updated every time a new message is created and added to the message group so that it reflects the date of the actual latest message (access pattern E). This is where a global secondary index is needed.
+
+Global secondary index
+GSI is a concept that takes some time to get familiar with. It is basically an index with a partition key and a sort key that can be different from those in the base table. You can imagine creating a new index almost as creating a new table in SQL. It can contain the same items as the base table but in a different order. That means the data is the same, but we twist it and look at it differently. GSIs always add extra costs and you want to avoid them if you can - as already previously mentioned, your base table should support as many of your access patterns as possible.
+
+For our final access pattern E, we want to update the sort key (last_message_at) to reflect the sort key of the latest message (created_at). This will be implemented by using a DynamoDB stream. Every time a new message is created and pushed to a message group, the DynamoDB stream catches the event and triggers a Lambda function. So, how do we get this Lambda function to update the sort key?
+
+As previously mentioned, the message groups have user_uuid as the partition key. So for each update, we have two different message groups with two different user_uuids (as there are always two versions of each conversation, one from the perspective of each participant). Hence we won't be able to find the correct message groups that we need to update based on the partition key. We could of course do a scan with a filter, but that is not a cost-effective solution.
+
+The best option in this situation is to use a GSI. This basically creates a clone of our primary table using the message_group_uuid as the partition key, but the two tables are kept in sync. This GSI allows for querying the table based on the message_group_uuid attribute, in addition to the primary key attributes 'pk' and 'sk':
+
+![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/2ce58ad2-d895-4b23-895d-1749cfc05d87)
+
+
+
+The GSI was added to the schema:
+```
+GlobalSecondaryIndexes= [{
+    'IndexName':'message-group-sk-index',
+    'KeySchema':[{
+      'AttributeName': 'message_group_uuid',
+      'KeyType': 'HASH'
+    },{
+      'AttributeName': 'sk',
+      'KeyType': 'RANGE'
+    }],
+    'Projection': {
+      'ProjectionType': 'ALL'
+    },
+  }],
+```
+Now the creation of a new message will be captured by the DynamoDB stream, which triggers a Lambda function that will use the GSI to query all message groups where the message group uuid matches the partition key of the message. It will then replace the sort key (last_message_at) with the sort key value (created_at) of the message. The sort keys for the message and two message groups are now matching:
+
+![image](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/02604eaf-723f-4de0-b892-2d8f8ba5835e)
+
   
 This following helped me understand more about dynamodb:  
 https://aws.amazon.com/blogs/compute/creating-a-single-table-design-with-amazon-dynamodb/
@@ -463,34 +571,7 @@ def query_value(self, sql, params={}):
 
 ```
 
-Sample table
-```
-|     pk           |      sk        |  message_group_uuid  |
-|-----------------------------------------------------------|
-|  GRP#123456789   |   2023#item1   |       group_uuid_1   |
-|  GRP#123456789   |   2023#item2   |       group_uuid_1   |
-|  GRP#123456789   |   2024#item1   |       group_uuid_1   |
-|  GRP#123456789   |   2024#item2   |       group_uuid_1   |
-|  GRP#987654321   |   2023#item1   |       group_uuid_2   |
-|  GRP#987654321   |   2024#item1   |       group_uuid_2   |
 
-```
-Let's assume my_user_uuid resolves to "123456789" and year resolves to "2024".
-
-The query will select items where:
-
-The partition key (pk) matches the value "GRP#123456789".
-The sort key (sk) begins with the value "2024".
-
-Result:
-
-```
-|     pk           |      sk        |  message_group_uuid  |
-|-----------------------------------------------------------|
-|  GRP#123456789   |   2024#item1   |       group_uuid_1   |
-|  GRP#123456789   |   2024#item2   |       group_uuid_1   |
-
-```
 
 List-tables script:
 The code is similar to get-converstaions so just writing the query
@@ -514,27 +595,6 @@ response = dynamodb.query(**query_params)
 print(json.dumps(response, sort_keys=True, indent=2))
 ```
 
-Sample table:
-```
-|      pk          |       sk          |  message_group_uuid  |
-|-------------------------------------------------------------|
-|  MSG#group1      |   2023#item1      |       group_uuid_1   |
-|  MSG#group1      |   2023#item2      |       group_uuid_1   |
-|  MSG#group1      |   2024#item1      |       group_uuid_1   |
-|  MSG#group1      |   2024#item2      |       group_uuid_1   |
-|  MSG#group2      |   2023#item1      |       group_uuid_2   |
-|  MSG#group2      |   2024#item1      |       group_uuid_2   |
-
-```
-
-Result:
-```
-|      pk          |       sk          |  message_group_uuid  |
-|-------------------------------------------------------------|
-|  MSG#group1      |   2024#item1      |       group_uuid_1   |
-|  MSG#group1      |   2024#item2      |       group_uuid_1   |
-
-```
 
 
 In DynamoDB, each item's partition key (pk) must be unique within the table. Unlike the sort key (sk), which can have duplicate values within a partition key, the partition key itself must be unique across all items in the table.  
@@ -1055,7 +1115,7 @@ export default checkAuth;
 
 
 
-# In summary, this code defines a function checkAuth that checks if a user is authenticated using AWS Cognito. If the user is authenticated, it retrieves user data and sets it using the provided setUser function. Any errors encountered during this process are logged to the console.
+ In summary, this code defines a function checkAuth that checks if a user is authenticated using AWS Cognito. If the user is authenticated, it retrieves user data and sets it using the provided setUser function. Any errors encountered during this process are logged to the console.
 
   
 Moving on we pulled CheckAuth and defined it in it’s own file, frontend-react-js/src/lib/CheckAuth.js.
@@ -1063,12 +1123,16 @@ Moving on we pulled CheckAuth and defined it in it’s own file, frontend-react-
 - Upon successful authentication, it retrieves the user's attributes, such as name and preferred username.
 - It sets the user's attributes using a provided function to update the application's state.
 - Inside the checkAuth function, if the user is successfully authenticated, it updates the user state using the setUser function. It sets the display_name and handle attributes based on the user's attributes retrieved from Cognito.
+
+
   
 We updated our HomeFeedPage.js, MessageGroupsPage.js, MessageGroupPage.js, and MessageForm.js to use setUser, which we defined in CheckAuth.
+
   
 >The setUser function is a state updater function provided by React's useState hook. In the context of the HomePage component, setUser is responsible for updating the user state variable.
   
 - Add our AWS_ENDPOINT_URL variable to our docker-compose.yml file.
+
 
 ![AWS_ENDPOINT_URL](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/f8bfb9ae-0eab-4003-a651-16dae393b9d9)
 
@@ -1081,59 +1145,163 @@ Updated this in our MessageGroupPage.js file.
 
 
 
-
-
 >We next moved onto making our message group definition a little more strict. In ddb.py, we updated the KeyConditionExpression with what we listed in our 
->get-converstation.py file. We removed the hardcoded value of the year, and instead passed datetime.now()year as year. This failed, so we ended up having to put >the value into a string, like so: year = str(datetime.now().year). We moved onto updating the same value in list-conversations.py as well. After refreshing, the >data is again showing in the Messages section, but it’s listing the @handle as the page. We go into our MessageGroupItem.js file and pass out message_group_uuid >for /messages/. We also needed to update our const classes to pass the message_group_uuid as well. A quick refresh to our web app, and there’s no errors, but the >messages are not displaying. Andrew notes this is because it’s part of the query we need on the MessageGroupPage.js. We check our const loadMessageGroupData, and >it’s already passing the message_group_uuid. We need to start implementing this into our backend.
+>get-converstation.py file. We removed the hardcoded value of the year, and instead passed datetime.now()year as year. This failed, so we ended up having to put >the value into a string, like so: year = str(datetime.now().year). We moved onto updating the same value in list-conversations.py as well.
+
+```
+my_user_uuid = get_my_user_uuid()
+print(f"my-uuid: {my_user_uuid}")
+year = str(datetime.now().year)      ----------> earlier this was fixed value
+# define the query parameters
+query_params = {
+  'TableName': table_name,
+  'KeyConditionExpression': 'pk = :pk AND begins_with(sk,:year)',
+  'ScanIndexForward': False,
+  'ExpressionAttributeValues': {
+    ':year': {'S': year },
+    ':pk': {'S': f"GRP#{my_user_uuid}"}
+  },
+  'ReturnConsumedCapacity': 'TOTAL'
+```
+
+
+> After refreshing, the data is again showing in the Messages section, but it’s listing the @handle as the page. We go into our MessageGroupItem.js file and pass out message_group_uuix> for /messages/. We also needed to update our const classes to pass the message_group_uuid as well. A quick refresh to our web app, and there’s no errors, but the >messages are not displaying. Andrew notes this is because it’s part of the query we need on the MessageGroupPage.js. We check our const loadMessageGroupData, and >it’s already passing the message_group_uuid. We need to start implementing this into our backend.
+
+```
+
+  const classes = () => {
+    let classes = ["message_group_item"];
+    if (params.message_group_uuid == props.message_group.uuid){        ------> Earlier it was handle here
+      classes.push('active')
+    }
+    return classes.join(' ');
+  }
+
+  return (
+    <Link className={classes()} to={`/messages/`+props.message_group.uuid}>
+      <div className='message_group_avatar'></div>
+      <div className='message_content'>
+        <div classsName='message_group_meta'>
+```
+
+
   
-In app.py, we remove the hardcoding of user_sender_handle and update our def data_messages to pass message_group_uuid as well. (removedhardcodingWeek5) We then updated this again, this time checking for cognito_user_id and message_group_uuid. In messages.py, we updated the code to pass in the message_group_uuid called client, then it will list messages. In ddb.py, we add define a function for list_messages passing client and the message_group_uuid as well.
+In app.py, we remove the hardcoding of user_sender_handle and update our def data_messages to pass message_group_uuid as well. 
+
+We then updated this again, this time checking for cognito_user_id and message_group_uuid. In messages.py, we updated the code to pass in the message_group_uuid called client, then it will list messages. In ddb.py, we add define a function for list_messages passing client and the message_group_uuid as well.
   
 We previously added code to get the cognito_user_id in message_groups.py, so we add this code to messages.py as well. This is not being used now, but it’s for permissions checks we will implement later.
-  
+    
 The mock messages however, are in the wrong order. To fix this, we had to reverse the items in our code. In ddb.py, we added items.reverse() to our code, then from did the same from our ddb/patterns/get-conversations file as well. For our conversations, we need to be able to differentiate between starting a new conversation and contiuing an existing one. To do this, we added a conditional if statement with an else passing along either the handle (new conversation) or message_group_uuid(existing conversation).
-
-
-In app.py, we need to adjust what we have for a create function. Under the definition for data_create_message, we again remove the hardcoding for the user_handle, then pass the same code we previously passed, this time passing the message, message_group_uuid, cognito_user_id, and the user_receiver_handle. We also needed to update our variables for message_group_uuid and user_receiver_handle to request.json and get the message_group_uuid and handle. Additionally we added an if else statement indicating if the message_group_uuid is None, we’re creating a new message. If it is not, we’re doing an update. Essentially similar to what we did earlier in ddb.py. Since we’re still working on existing messages, we comment out the create elif statement for now.
-
+  
+  
+In app.py, we need to adjust what we have for a create function. Under the definition for data_create_message, we again remove the hardcoding for the user_handle, then pass the same code we previously passed, this time passing the message, message_group_uuid, cognito_user_id, and the user_receiver_handle.
+  
+  
+We also needed to update our variables for message_group_uuid and user_receiver_handle to request.json and get the message_group_uuid and handle. 
+  
+Additionally we added an if else statement indicating if the message_group_uuid is None, we’re creating a new message. If it is not, we’re doing an update. Essentially similar to what we did earlier in ddb.py. Since we’re still working on existing messages, we comment out the create elif statement for now.
+  
 Back in ddb.py, we update our code to define our create_message function here as well. It will generate the uuid for us, since DynamoDB cannot by itself, it will create a record with message_group_uuid, message, message_uuid, amongst more information.
 
 
 When we refresh our web app again, we’re not getting errors from the backend logs, but upon using Inspect from our browser, it’s giving TypeError: Cannot set property json of Object which has only a getter.
 
 
-We jump back over create_message.py and find we have a template added that we need to create. We go into backend-flask/db/sql/users directory and create create_message_users.sql.
+We jump back over create_message.py and find we have a template added that we need to create.
 
+We go into backend-flask/db/sql/users directory and create create_message_users.sql.
+
+```
+SELECT -- Select statement to retrieve data
+  users.uuid, -- Selecting the UUID column from the users table
+  users.display_name, -- Selecting the display_name column from the users table
+  users.handle, -- Selecting the handle column from the users table
+  CASE users.cognito_user_id = %(cognito_user_id)s -- Conditional check on cognito_user_id
+  WHEN TRUE THEN -- If the condition is true, set the result as 'sender'
+    'sender'
+  WHEN FALSE THEN -- If the condition is false, set the result as 'recv'
+    'recv'
+  ELSE -- If neither of the above conditions are met, set the result as 'other'
+    'other'
+  END as kind -- Assigning the result of the CASE statement to a column named 'kind'
+FROM public.users -- Selecting data from the public schema's users table
+WHERE
+  users.cognito_user_id = %(cognito_user_id)s -- Filtering rows where cognito_user_id matches the provided parameter
+  OR 
+  users.handle = %(user_receiver_handle)s -- Or filtering rows where handle matches the provided parameter
+
+```
 
 When we refresh our web app this time, it will now post messages(data) correctly.
 
 
-Now that that is working as intended, we now go back and focus on creating a new conversation. In frontend-react, we navigate to src/App.js and add a new path for a new page, MessageGroupNewPage. We then add the import to the top of the page as well. We then move over to src/pages and create the new page, MessageGroupNewPage.js. In this page, we import {CheckAuth}, then remove the function and pass our setUser. We then create a 3rd mock user for our database to our seed.sql file in backend-flask/db. So we don’t have to compose down our environment and then compose it back up, instead we pass the SQL query locally through the terminal after connecting to our Postgres db using ./bin/db/connect, then running our query of manually.
-
-
-In app.py we define a new function data_users_short passing in the handle. We need to create a new service for this. In backend-flask/services we create a new one, users_short.py. (usershortWeek5) We then go into our sql/users and create a new file called short.sql.
-
-
-Also in frontend-react/components we create MessageGroupNewItem.js. We also have to go back and update MessageGroupFeed.js. A refresh of our web app, and we have another conversation. In MessageForm.js, we add a conditional to create messages and then we uncomment the lines of code we previously commented out in create_message.py to imlement it. In ddb.py, we then define the create_message_group function utilizing batch write and import botocore.exceptions as well.
-
-
-
-
-
-
-
-
-
-
-
+Now that that is working as intended, we now go back and focus on creating a new conversation.
 
   
+In frontend-react, we navigate to src/App.js and add a new path for a new page, MessageGroupNewPage.
+We then add the import to the top of the page as well. 
+
+We then move over to src/pages and create the new page, MessageGroupNewPage.js. In this page, we import {CheckAuth}, then remove the function and pass our setUser. 
+
+We then create a 3rd mock user for our database to our seed.sql file in backend-flask/db. So we don’t have to compose down our environment and then compose it back up, instead we pass the SQL query locally through the terminal after connecting to our Postgres db using ./bin/db/connect, then running our query of manually.
+
+
+In app.py we define a new function data_users_short passing in the handle. We need to create a new service for this. In backend-flask/services we create a new one, users_short.py.
+
+```
+from lib.db import db
+
+class UsersShort:
+  def run(handle):
+    sql = db.template('users','short')
+    results = db.query_object_json(sql,{
+      'handle': handle
+    })
+    return results
+```
+
+We then go into our sql/users and create a new file called short.sql.
+
+```
+SELECT
+  users.uuid,
+  users.handle,
+  users.display_name
+FROM public.users
+WHERE 
+  users.handle = %(handle)s
+```
+
+
+
+MessageGroupItem.js - This component is meant to render a single message group item with its details and provide a link to navigate to the message group's detailed view. Additionally, it formats the time of creation in a human-readable format.
+
+Also in frontend-react/components we create MessageGroupNewItem.js. 
+
+MessageGroupNewItem.js. -  this component serves as a UI element for creating a new message group, providing a link to navigate to a new message creation page with the user's handle included in the URL.
+
+
+
+
+We also have to go back and update MessageGroupFeed.js. - MessageGroupFeed component is responsible for rendering a feed of message groups. It displays a heading, possibly for a messaging section, and then renders a list of existing message groups using MessageGroupItem components. Additionally, if provided with props.otherUser, it renders a special MessageGroupNewItem component, presumably for creating a new message group.
+
+
+A refresh of our web app, and we have another conversation. 
+
+In MessageForm.js, we add a conditional to create messages and then we uncomment the lines of code we previously commented out in create_message.py to imlement it. 
+
+MessageForm.js encapsulates the logic for sending messages within the application, handling user input, form submission, and interaction with the backend API, while also providing basic error handling and styling.
+
+In ddb.py, we then define the create_message_group function utilizing batch write and import botocore.exceptions as well.
+
+
+  ![prod-ddb-table](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/f8fe974d-58ec-4daa-86ca-0ee7dda61699)
 
 
 
 - Need to create a Dynamo DB Stream trigger so as to update the message groups.
 - To start this, we ran ./bin/ddb/schema-load prod. We then logged into AWS and checked DynamoDB to see our new table.
-
-  ![prod-ddb-table](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/f8fe974d-58ec-4daa-86ca-0ee7dda61699)
 
 
 
@@ -1141,7 +1309,9 @@ We next needed to turn on streaming through the console. To do this, we went to 
 
   ![Screenshot 2024-01-22 220506](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/44e5fc6b-ed98-434d-8a23-e9aed2a57b05)
 
-  
+
+
+When your Lambda function is running within a VPC and needs to access DynamoDB, you still require a VPC endpoint called "DynamoDB VPC Endpoint" or "Gateway Endpoint" to enable communication between the Lambda function and DynamoDB. This is because the Lambda function within the VPC is isolated from the public internet, and the VPC endpoint provides a secure and direct connection to DynamoDB without needing to route traffic through the internet gateway.
 
 -  Gateway endpoints, which are whats used for connecting to DynamoDB, do not incur additional charges. Created VPC endpoint in AWS named ddb-cruddur1 then connected it to DynamoDB as a service.
     
@@ -1202,14 +1372,50 @@ def lambda_handler(event, context):
       )
       print("CREATE ===>",response)
 ```
-  
+
+This Lambda function is triggered whenever a new message is sent or updated in the DynamoDB table cruddur-messages. Let's break down how this function works and how it interacts with the table based on the provided schema:
+
+Event Data Extraction:
+
+The Lambda function receives an event containing information about the change that triggered it.
+It extracts relevant data such as the event name (eventName), partition key (pk), sort key (sk), and message content (message) from the event.
+Event Name Validation:
+
+The function checks if the event name is 'REMOVE'. If it is, it skips processing because it indicates that a message is being deleted.
+Message Group Identification:
+
+If the event corresponds to a message (pk starts with 'MSG#'), the function identifies the message group UUID (group_uuid) by extracting it from the partition key (pk).
+It retrieves the message content (message) from the event.
+Querying Message Group Rows:
+
+The function queries the DynamoDB table (cruddur-messages) using the message group UUID (group_uuid) to retrieve all rows associated with the message group.
+It queries the table using the global secondary index (message-group-sk-index), which is indexed by message_group_uuid.
+Updating Message Group Rows:
+
+For each row retrieved, the function deletes the existing row and recreates it with the updated sort key (sk) value.
+The updated row contains the same partition key (pk) and message group UUID (message_group_uuid) but with the new sort key (sk) and updated message content (message).
+Logging and Error Handling:
+
+The function logs the details of the operation performed (deletion and creation of rows) for debugging purposes.
+Any errors encountered during the process are logged for troubleshooting.
+Interaction with the Table:
+
+When a new message is sent or updated, the Lambda function ensures that all rows associated with the message group are updated with the latest message content and sorted according to the new timestamp (sk).
+It achieves this by querying the table using the message group UUID, deleting existing rows, and recreating them with the updated information.
+This process ensures that the table remains consistent and up-to-date with the latest messages for each conversation.
+In the context of the previously drawn table schema, this Lambda function effectively manages the update of messages within a conversation, ensuring that the table reflects the latest message content and maintains the correct chronological order of messages.
+
+
+
+
+
 DynamoDB does not allow you to directly update the sort key of an existing item. Therefore, if you want to change the sort key of a message within a message group (for example, to reflect a new timestamp), you must delete the existing item and insert a new one with the updated sort key. This is likely why the code deletes and re-adds messages within the group.  
 
-## Overview
+Overview
 
 The Lambda function is designed to update the position of a message within a message group that already exists in the DynamoDB table.
 
-## Existing Message Group
+ Existing Message Group
 
 The DynamoDB table contains multiple message groups, each identified by a unique partition key (pk). Within each message group, there are multiple messages stored with different sort key values (sk), representing their order within the group.
 
@@ -1336,5 +1542,9 @@ Security Best Practices – application side
 - Site to site VPN or Direct Connect for Onprem and DynamoDB Access
 - Client side encryption is recommended by Amazon for DyanmoDB
 ```
+
+
+
+
 
 
