@@ -564,5 +564,15 @@ To test this from the terminal, we selected our Postgres bash terminal in Gitpod
 ![Screenshot 2024-01-11 200910](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/86f43185-0911-42a8-9c40-6596ab2f5c2f)
 ![Screenshot 2024-01-11 201348](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/50d5191b-b999-4742-813e-04dc0e712d41)
 ![Screenshot 2024-01-11 232836](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/a6bb4795-3af2-40ee-bffb-af9f5dafa414)
-
 ![Screenshot 2024-01-11 232959](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/b3e8ff98-e953-4839-b651-a4295235fea3)
+
+
+
+
+Next, we spun up our environment and login and find there’s no data. This is because we need to create it.
+
+We begin by creating activities. While working out the code for actvities, we found a function to add to db.py from 
+https://kb.objectrocket.com/postgresql/python-error-handling-with-the-psycopg2-postgresql-adapter-645. 
+
+Defined a new function in db.py to clean up code in create_activity.py. Called function in home_activities.py instead. Wrapped all functions in db.py by defining new class Db and importing to home_activities.py.
+
