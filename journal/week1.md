@@ -1,235 +1,123 @@
-# Week 1 — App Containerization
-
-## References
-
-Good Article for Debugging Connection Refused
-https://pythonspeed.com/articles/docker-connection-refused/
+# week01
 
 
-## VSCode Docker Extension
+Created an openapi-3.0.yml file as a standard for defining APIs. 
+The API is providing us with mock data
+  
+[openapi yml file](../backend-flask/openapi-3.0.yml)
+  
 
-Docker for VSCode makes it easy to work with Docker
+Added the section for notifications in openapi-3.0.yml document
 
-https://code.visualstudio.com/docs/containers/overview
-
-> Gitpod is preinstalled with this extension
-
-## Containerize Backend
-
-### Run Python
-
-```sh
-cd backend-flask
-export FRONTEND_URL="*"
-export BACKEND_URL="*"
-python3 -m flask run --host=0.0.0.0 --port=4567
-cd ..
+```yml
+  /api/activities/notifications:
+    get:
+      description: 'Return a feed of activity for all of those that I follow'
+      tags:
+        - activities
+      parameters: []
+      responses:
+        '200':
+          description: Returns an array of activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
 ```
 
-- make sure to unlock the port on the port tab
-- open the link for 4567 in your browser
-- append to the url to `/api/activities/home`
-- you should get back json
+  
+  
 
-![4](https://github.com/bhanumalhotra123/aws-bootcamp-cruddur-2023/assets/144083659/265f047e-1e91-4b84-bed2-3cb83f8c2f2d)
-
-
-### Add Dockerfile
-
-Create a file here: `backend-flask/Dockerfile`
-
-```dockerfile
-FROM python:3.10-slim-buster
-
-WORKDIR /backend-flask
-
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
-
-COPY . .
-
-ENV FLASK_ENV=development
-
-EXPOSE ${PORT}
-CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=4567"]
+To create a Flask Backend Endpoint for Notifications, added the following in app.py:
+  
 ```
-
-### Build Container
-
-```sh
-docker build -t  backend-flask ./backend-flask
+from services.notifications_activities import *
 ```
+> In Python, when you import a module using the asterisk * notation, it means that you are importing all the names (functions, classes, variables) defined in that module into the current namespace.
 
-### Run Container
-
-Run 
-```sh
-docker run --rm -p 4567:4567 -it backend-flask
-FRONTEND_URL="*" BACKEND_URL="*" docker run --rm -p 4567:4567 -it backend-flask
-export FRONTEND_URL="*"
-export BACKEND_URL="*"
-docker run --rm -p 4567:4567 -it -e FRONTEND_URL='*' -e BACKEND_URL='*' backend-flask
-docker run --rm -p 4567:4567 -it  -e FRONTEND_URL -e BACKEND_URL backend-flask
-unset FRONTEND_URL="*"
-unset BACKEND_URL="*"
+    
+```py
+@app.route("/api/activities/notifications", methods=['GET'])
+def data_notifications():
+  data = NotificationsActivities.run()
+  return data, 200
 ```
-
-Run in background
-```sh
-docker container run --rm -p 4567:4567 -d backend-flask
+>This Flask route handles GET requests to "/api/activities/notifications" by calling the run() method of the NotificationsActivities class and returning its result with a status code of 200.
+  
+  
 ```
-
-Return the container id into an Env Vat
-```sh
-CONTAINER_ID=$(docker run --rm -p 4567:4567 -d backend-flask)
+from datetime import datetime, timedelta, timezone
+class NotificationsActivities:
+  def run():
+    now = datetime.now(timezone.utc).astimezone()
+    results = [{
+      'uuid': '68f126b0-1ceb-4a33-88be-d90fa7109eee',
+      'handle':  'coco',
+      'message': 'I am white unicorn',
+      'created_at': (now - timedelta(days=2)).isoformat(),
+      'expires_at': (now + timedelta(days=5)).isoformat(),
+      'likes_count': 5,
+      'replies_count': 1,
+      'reposts_count': 0,
+      'replies': [{
+        'uuid': '26e12864-1c26-5c3a-9658-97a10f8fea67',
+        'reply_to_activity_uuid': '68f126b0-1ceb-4a33-88be-d90fa7109eee',
+        'handle':  'Worf',
+        'message': 'This post has no honor!',
+        'likes_count': 0,
+        'replies_count': 0,
+        'reposts_count': 0,
+        'created_at': (now - timedelta(days=2)).isoformat()
+      }],
+    },
+    ]
+    return results
 ```
+   
+>The run() method within the NotificationsActivities class generates dummy notification data, encapsulating each notification as a dictionary within a list, and returns this list.
 
-> docker container run is idiomatic, docker run is legacy syntax but is commonly used.
+  
 
-### Get Container Images or Running Container Ids
+  
+For frontend, to implement the notifications accessed app.js and added the following:
 
+  
 ```
-docker ps
-docker images
+import NotificationsFeedPage from './pages/NotificationsFeedPage';
 ```
+> This line of code imports the NotificationsFeedPage component from the file located at './pages/NotificationsFeedPage' in the project directory.
 
-
-### Send Curl to Test Server
-
-```sh
-curl -X GET http://localhost:4567/api/activities/home -H "Accept: application/json" -H "Content-Type: application/json"
+  
+  
 ```
-
-### Check Container Logs
-
-```sh
-docker logs CONTAINER_ID -f
-docker logs backend-flask -f
-docker logs $CONTAINER_ID -f
+  {
+    path: "/notifications",
+    element: <NotificationsFeedPage />
+  },
 ```
+> These lines define a route configuration object where the path "/notifications" is mapped to render the NotificationsFeedPage component when accessed.
+    
+    
+Then under pages, we created the pages NotificationsFeedPage.js and NotificationsFeedPage.css.
+  
+[notificationfeedpage.js](../frontend-react-js/src/pages/NotificationsFeedPage.js)
+[notificationfeedpage.css](../frontend-react-js/src/pages/NotificationsFeedPage.css)
+  
+Used the HomeFeedPage.js and  editing it to reflect the notification page:
+  
+> This React component represents a page for displaying notifications. It fetches notification data from a backend API upon rendering and checks user authentication using cookies. It renders a desktop navigation bar, content area containing forms for adding activities and replies, and an activity feed displaying notifications. The sidebar displays user information.
 
-###  Debugging  adjacent containers with other containers
+     
+        
+Added DynamoDB local and Postgres local configuration in Docker-compose.yml file:
+  
 
-```sh
-docker run --rm -it curlimages/curl "-X GET http://localhost:4567/api/activities/home -H \"Accept: application/json\" -H \"Content-Type: application/json\""
-```
 
-busybosy is often used for debugging since it install a bunch of thing
-
-```sh
-docker run --rm -it busybosy
-```
-
-### Gain Access to a Container
-
-```sh
-docker exec CONTAINER_ID -it /bin/bash
-```
-
-> You can just right click a container and see logs in VSCode with Docker extension
-
-### Delete an Image
-
-```sh
-docker image rm backend-flask --force
-```
-
-> docker rmi backend-flask is the legacy syntax, you might see this is old docker tutorials and articles.
-
-> There are some cases where you need to use the --force
-
-### Overriding Ports
-
-```sh
-FLASK_ENV=production PORT=8080 docker run -p 4567:4567 -it backend-flask
-```
-
-> Look at Dockerfile to see how ${PORT} is interpolated
-
-## Containerize Frontend
-
-## Run NPM Install
-
-We have to run NPM Install before building the container since it needs to copy the contents of node_modules
+# For Postgres
 
 ```
-cd frontend-react-js
-npm i
-```
-
-### Create Docker File
-
-Create a file here: `frontend-react-js/Dockerfile`
-
-```dockerfile
-FROM node:16.18
-
-ENV PORT=3000
-
-COPY . /frontend-react-js
-WORKDIR /frontend-react-js
-RUN npm install
-EXPOSE ${PORT}
-CMD ["npm", "start"]
-```
-
-### Build Container
-
-```sh
-docker build -t frontend-react-js ./frontend-react-js
-```
-
-### Run Container
-
-```sh
-docker run -p 3000:3000 -d frontend-react-js
-```
-
-## Multiple Containers
-
-### Create a docker-compose file
-
-Create `docker-compose.yml` at the root of your project.
-
-```yaml
-version: "3.8"
-services:
-  backend-flask:
-    environment:
-      FRONTEND_URL: "https://3000-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
-      BACKEND_URL: "https://4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
-    build: ./backend-flask
-    ports:
-      - "4567:4567"
-    volumes:
-      - ./backend-flask:/backend-flask
-  frontend-react-js:
-    environment:
-      REACT_APP_BACKEND_URL: "https://4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}"
-    build: ./frontend-react-js
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend-react-js:/frontend-react-js
-
-# the name flag is a hack to change the default prepend folder
-# name when outputting the image names
-networks: 
-  internal-network:
-    driver: bridge
-    name: cruddur
-```
-
-## Adding DynamoDB Local and Postgres
-
-We are going to use Postgres and DynamoDB local in future labs
-We can bring them in as containers and reference them externally
-
-Lets integrate the following into our existing docker compose file:
-
-### Postgres
-
-```yaml
 services:
   db:
     image: postgres:13-alpine
@@ -241,29 +129,13 @@ services:
       - '5432:5432'
     volumes: 
       - db:/var/lib/postgresql/data
-volumes:
-  db:
-    driver: local
 ```
-
-To install the postgres client into Gitpod
-
-```sh
-  - name: postgres
-    init: |
-      curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
-      echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" |sudo tee  /etc/apt/sources.list.d/pgdg.list
-      sudo apt update
-      sudo apt install -y postgresql-client-13 libpq-dev
-```
-
-### DynamoDB Local
-
-```yaml
+  
+# For Dynamodb
+  
+```yml
 services:
   dynamodb-local:
-    # https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
-    # We needed to add user:root to get this working.
     user: root
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
     image: "amazon/dynamodb-local:latest"
@@ -274,26 +146,16 @@ services:
       - "./docker/dynamodb:/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
 ```
+-  https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
+-  We needed to add user:root to get this working.
 
-Example of using DynamoDB local
-https://github.com/100DaysOfCloud/challenge-dynamodb-local
-
-## Volumes
-
-directory volume mapping
-
-```yaml
-volumes: 
-- "./docker/dynamodb:/home/dynamodblocal/data"
+  
+  
+Then at the bottom of the docker-compose.yml file, we added the rest of the Postgres code for the volumes:
 ```
-
-named volume mapping
-
-```yaml
-volumes: 
-  - db:/var/lib/postgresql/data
-
 volumes:
   db:
     driver: local
 ```
+  
+This wrapped up Week 1 of the bootcamp.
